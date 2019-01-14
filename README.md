@@ -1,5 +1,5 @@
 # RoboCupHumanoid
-Detection and tracking of the soccer ball for <a href="https://www.robocuphumanoid.org/">RoboCup Humanoid League</a>
+## Detection and tracking of the soccer ball for <a href="https://www.robocuphumanoid.org/">RoboCup Humanoid League</a>
 In this project, we are aiming to implement [1] and improve it using Conv + LSTM layer for video sequences.
 
 ## References

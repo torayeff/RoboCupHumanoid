@@ -2,7 +2,7 @@
 In this project, we are aiming to implement [1] and improve it using Conv + LSTM layer for detection and tracking of the soccer ball for <a href="https://www.robocuphumanoid.org/">RoboCup Humanoid League</a>.
 
 ### Dataset
-data.csv contains information about training images with the following fields:
+example_data.csv contains information about training images with the following fields:
 <ul>
   <li><b>image_file</b> - image location,</li>
   <li><b>width</b> - width of the image,</li>

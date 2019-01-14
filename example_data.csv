@@ -1,0 +1,2 @@
+image_file,width,height,label,xmin,ymin,xmax,ymax
+example_ball.jpg,640,480,ball,407,217,456,265

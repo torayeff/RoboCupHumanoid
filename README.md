@@ -9,9 +9,9 @@ example_data.csv contains information about training images with the following f
   <li><b>height</b> - height of the image,</li>
   <li><b>label</b> - label of the object,</li>
   <li><b>xmin</b> - top left x-coordinate of rectangle around object,</li>
-  <li><b>ymin</b> - top left y-coordinate of recatngle around object,</li>
-  <li><b>xmax</b> - bottom right x-coordinate of recatngle around object,</li>
-  <li><b>ymax</b> - bottom right y-coordinate of recatngle around object.</li>
+  <li><b>ymin</b> - top left y-coordinate of rectangle around object,</li>
+  <li><b>xmax</b> - bottom right x-coordinate of rectangle around object,</li>
+  <li><b>ymax</b> - bottom right y-coordinate of rectangle around object.</li>
 </ul>
 <b>Note</b>: One image file may contain multiple objects of different types.
 

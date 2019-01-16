@@ -1,62 +1,159 @@
 """
 Helper functions.
 """
+import os
+import glob
+import shutil
 import numpy as np
 import scipy.stats
-from PIL import Image
+import xml.etree.ElementTree
+from skimage import io
+import torch
+from torch.utils.data import Dataset
 
 
-def get_teacher_signal(width, height, xmin, ymin, xmax, ymax, sigma=4, downsample=4):
-    """Creates teacher signal for the image."""
-    signal = np.zeros((height, width))
+def get_teacher_signal(height, width, bndboxes, sigma=4, downsample=4):
+    """Creates teacher signal for the image.
 
-    c_x = xmin + int((xmax - xmin) / 2)
-    c_y = ymin + int((ymax - ymin) / 2)
+    Args:
+        height: Height of the image.
+        width: Width of the image.
+        bndboxes: Coordinates of bounding boxes around objects as a list of tuples.
+        sigma: Standard deviation for Gaussian.
+        downsample: Downsampling ratio.
 
-    for y in range(ymin, ymax + 1):
-        for x in range(xmin, xmax + 1):
-            signal[y, x] = scipy.stats.multivariate_normal.pdf([y, x], [c_y, c_x], [sigma, sigma])
+    Returns:
+        2D feature map of image.
+    """
+
+    signal = np.zeros((int(height) // downsample, int(width) // downsample))
+
+    for box in bndboxes:
+        xmin = int(box[0]) // downsample
+        ymin = int(box[1]) // downsample
+        xmax = int(box[2]) // downsample
+        ymax = int(box[3]) // downsample
+
+        c_x = xmin + (xmax - xmin) // 2
+        c_y = ymin + (ymax - ymin) // 2
+
+        for y in range(ymin, ymax):
+            for x in range(xmin, xmax):
+                signal[y, x] = scipy.stats.multivariate_normal.pdf([y, x], [c_y, c_x], [sigma, sigma])
 
     # downsample
-    signal = signal[::downsample, ::downsample]
+    # signal = signal[::downsample, ::downsample]
     return signal
 
 
-def create_dataset(csv_file, obj=None, sep=',', sigma=4, downsample=4, verbose=True):
-    """Creates dataset from csv_file."""
+def get_csv_lines(filename):
+    """Creates CSV lines from PASCAL VOC formatted XML file."""
+    tree = xml.etree.ElementTree.parse(filename)
 
-    dataset = []
-    count = 0
+    root = tree.getroot()
 
-    with open(csv_file, "r") as f:
-        csv_lines = f.readlines()[1:]
+    size = root.find('size')
+    width = size.find('width').text
+    height = size.find('height').text
+    fn = filename.split("/")[-1].split(".")[0] + ".jpg"
+    filedata = [fn, width, height]
 
-    for line in csv_lines:
-        cols = line.strip("\n").split(sep)
-        if obj is not None:
-            if cols[3] == obj:
-                if verbose:
-                    print("Preparing sample #", count)
-                    count += 1
+    lines = []
 
-                file_name = cols[0]
-                width = int(cols[1])
-                height = int(cols[2])
-                xmin = int(cols[4])
-                ymin = int(cols[5])
-                xmax = int(cols[6])
-                ymax = int(cols[7])
+    for obj in root.findall('object'):
+        label = obj.find('name').text
+        bndbox = obj.find('bndbox')
+        xmin = bndbox.find('xmin').text
+        ymin = bndbox.find('ymin').text
+        xmax = bndbox.find('xmax').text
+        ymax = bndbox.find('ymax').text
 
-                # create signal
-                signal = get_teacher_signal(width, height, xmin, ymin, xmax, ymax, sigma=sigma, downsample=downsample)
+        # if label == 'ball':
+        #     objdata = [label, xmin, ymin, xmax, ymax]
+        #     line = filedata + objdata
+        #     lines.append(line)
 
-                # extract image array to memory
-                img = np.array(Image.open("data/" + file_name))
+        objdata = [label, xmin, ymin, xmax, ymax]
+        line = filedata + objdata
+        lines.append(line)
 
-                dataset.append([img, signal])
-
-    return dataset
+    return lines
 
 
-ds = create_dataset("data/data.csv", 'ball')
-print(len(ds))
+def create_csv_folder(xml_folder, csv_folder, sep=','):
+    """Creates CSV folder from XML PASCAL VOC folder."""
+
+    strdata = ""
+    for fn in glob.glob(xml_folder + "*.xml"):
+        lines = get_csv_lines(fn)
+
+        for line in lines:
+            strdata += sep.join(line) + "\n"
+
+            # copy to csv_folder
+            src = xml_folder + line[0]
+            dst = csv_folder + line[0]
+            shutil.copy(src, dst)
+
+    with open(csv_folder + "data.csv", "w") as f:
+        f.write("image_file,width,height,label,xmin,ymin,xmax,ymax\n")
+        f.write(strdata.strip())
+
+
+class SoccerBallDataset(Dataset):
+    """Soccer Balls dataset."""
+
+    def __init__(self, csv_file, root_dir, transform=None, sigma=4, downsample=4):
+        """
+        Args:
+            csv_file: Path to csv file.
+            root_dir: Directory with all images.
+            transform: Optional transform to be applied.
+        """
+
+        self.sigma = sigma
+        self.downsample = downsample
+
+        self.dset = {}
+        with open(csv_file, "r") as f:
+            for line in f.readlines()[1:]:
+                data = line.strip().split(",")
+                filename = data[0]
+                if filename not in self.dset.keys():
+                    self.dset[filename] = []
+
+                self.dset[filename].append(data[1:])
+
+        self.filenames = list(self.dset.keys())
+        self.root_dir = root_dir
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, idx):
+        """Fetches image with corresponding teacher signal."""
+
+        image_name = self.filenames[idx]
+        image_path = os.path.join(self.root_dir, image_name)
+        image = io.imread(image_path).transpose(2, 0, 1)
+        image = image / 255.
+        image = torch.from_numpy(image)
+
+        width = self.dset[image_name][0][0]
+        height = self.dset[image_name][0][1]
+        bndboxes = []
+
+        for obj in self.dset[image_name]:
+            bndboxes.append(obj[3:])
+
+        # transform only images
+        if self.transform:
+            image = self.transform(image)
+
+        signal = get_teacher_signal(height, width, bndboxes, self.sigma, self.downsample)
+
+        sample = {'image': image, 'signal': signal}
+
+        return sample
+

@@ -46,7 +46,7 @@ def get_teacher_signal(height, width, bndboxes, sigma=4, downsample=4):
     return signal
 
 
-def get_csv_lines(filename):
+def get_csv_lines(filename, labels):
     """Creates CSV lines from PASCAL VOC formatted XML file."""
     tree = xml.etree.ElementTree.parse(filename)
 
@@ -68,24 +68,20 @@ def get_csv_lines(filename):
         xmax = bndbox.find('xmax').text
         ymax = bndbox.find('ymax').text
 
-        # if label == 'ball':
-        #     objdata = [label, xmin, ymin, xmax, ymax]
-        #     line = filedata + objdata
-        #     lines.append(line)
-
-        objdata = [label, xmin, ymin, xmax, ymax]
-        line = filedata + objdata
-        lines.append(line)
+        if label in labels:
+            objdata = [label, xmin, ymin, xmax, ymax]
+            line = filedata + objdata
+            lines.append(line)
 
     return lines
 
 
-def create_csv_folder(xml_folder, csv_folder, sep=','):
+def create_csv_folder(xml_folder, csv_folder, labels, sep=','):
     """Creates CSV folder from XML PASCAL VOC folder."""
 
     strdata = ""
     for fn in glob.glob(xml_folder + "*.xml"):
-        lines = get_csv_lines(fn)
+        lines = get_csv_lines(fn, labels)
 
         for line in lines:
             strdata += sep.join(line) + "\n"
@@ -157,3 +153,6 @@ class SoccerBallDataset(Dataset):
 
         return sample
 
+
+labels = ['ball']
+create_csv_folder("data/train_cnn/", "data/train/", labels=labels)

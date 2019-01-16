@@ -34,15 +34,13 @@ def get_teacher_signal(height, width, bndboxes, sigma=4, downsample=4):
         xmax = int(box[2]) // downsample
         ymax = int(box[3]) // downsample
 
-        c_x = xmin + (xmax - xmin) // 2
-        c_y = ymin + (ymax - ymin) // 2
+        c_x = xmin + (xmax - xmin) / 2
+        c_y = ymin + (ymax - ymin) / 2
 
         for y in range(ymin, ymax):
             for x in range(xmin, xmax):
                 signal[y, x] = scipy.stats.multivariate_normal.pdf([y, x], [c_y, c_x], [sigma, sigma])
 
-    # downsample
-    # signal = signal[::downsample, ::downsample]
     return signal
 
 
@@ -149,7 +147,7 @@ class SoccerBallDataset(Dataset):
 
         signal = get_teacher_signal(height, width, bndboxes, self.sigma, self.downsample)
 
-        sample = {'image': image, 'signal': signal}
+        sample = {'image': image, 'signal': signal, 'img_name': image_name, 'boxes': bndboxes}
 
         return sample
 

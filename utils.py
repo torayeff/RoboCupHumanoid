@@ -157,7 +157,7 @@ class SoccerBallDataset(Dataset):
         """
         width, height, bndboxes = self.get_w_h_bnd_from_img(img_name)
 
-        signal = np.zeros((int(height) // self.downsample, int(width) // self.downsample))
+        signal = np.zeros((1,int(height) // self.downsample, int(width) // self.downsample))
 
         for box in bndboxes:
             xmin = int(box[0]) // self.downsample
@@ -170,7 +170,7 @@ class SoccerBallDataset(Dataset):
 
             for y in range(ymin, ymax):
                 for x in range(xmin, xmax):
-                    signal[y, x] += scipy.stats.multivariate_normal.pdf([y, x], [c_y, c_x], [self.sigma, self.sigma])
+                    signal[0, y, x] += scipy.stats.multivariate_normal.pdf([y, x], [c_y, c_x], [self.sigma, self.sigma])
 
         sg_sum = signal.sum()
 

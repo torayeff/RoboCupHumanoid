@@ -12,6 +12,8 @@ import torch
 from torch.utils.data import Dataset
 import pickle
 from time import time
+from multiprocessing import Pool
+
 
 DEBUG = False
 
@@ -73,7 +75,7 @@ def save_pickle(data, output_path = 'data/teacher_signals'):
 class SoccerBallDataset(Dataset):
     """Soccer Balls dataset."""
 
-    def __init__(self, csv_file, root_dir, transform=None, sigma=4, downsample=4, delimiter=",", labels=['ball']):
+    def __init__(self, csv_file, root_dir, transform=None, sigma=4, downsample=4, delimiter=",", labels=['ball'], threads=1):
         """
         Args:
             csv_file: Path to csv file.
@@ -86,6 +88,7 @@ class SoccerBallDataset(Dataset):
         self.sigma = sigma
         self.downsample = downsample
         self.labels = labels
+        self.threads = threads
         # dset = {img_name : [ [w,h,l1,xmin1,ymin1,xmax1,ymax1], [w,h,l2,xmin2,ymin2,xmax2,ymax2] ] , ...}
         self.dset = {}
         """
@@ -115,7 +118,9 @@ class SoccerBallDataset(Dataset):
 
         self.filenames = list(self.dset.keys())
 
-        self.teacher_signals = self.compute_teacher_signals()
+        self.teacher_signals = {}
+
+        self.compute_teacher_signals()
 
         self.root_dir = root_dir
         self.transform = transform
@@ -143,7 +148,7 @@ class SoccerBallDataset(Dataset):
         return sample
 
 
-    def get_teacher_signal(self, img_name):
+    def add_teacher_signal(self, img_name):
         """Creates teacher signal for the image.
             Args:
                 img_name: name of the image.
@@ -167,7 +172,15 @@ class SoccerBallDataset(Dataset):
                 for x in range(xmin, xmax):
                     signal[y, x] += scipy.stats.multivariate_normal.pdf([y, x], [c_y, c_x], [self.sigma, self.sigma])
 
-        return signal/signal.sum()
+        sg_sum = signal.sum()
+
+        if sg_sum == 0:
+            teacher_signal = signal
+        else:
+            teacher_signal = signal/sg_sum
+
+        self.teacher_signals[img_name] = teacher_signal
+
 
     def get_w_h_bnd_from_img(self, img_name):
         """
@@ -202,15 +215,15 @@ class SoccerBallDataset(Dataset):
         """
         tic = time()
         print("Computing teacher signals...")
-        teacher_signals = {}
-
-        for img_name in self.filenames:
-            teacher_signal = self.get_teacher_signal(img_name)
-
-            teacher_signals[img_name] = teacher_signal
+        if self.threads == 1:
+            for img_name in self.filenames:
+                self.add_teacher_signal(img_name)
+        # TODO: Later if we have time. For now it is not working
+        elif self.threads > 1:
+            with Pool(self.threads) as pool:
+                pool.imap(self.add_teacher_signal, self.filenames)
 
         #save_pickle(teacher_signals)
         print("Elapsed: {:f} sec.".format(time() - tic))
-        return teacher_signals
 
 #create_csv_folder("data/train_cnn/", "data/train/", labels=labels)

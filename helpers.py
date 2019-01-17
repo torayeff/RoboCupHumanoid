@@ -34,8 +34,8 @@ def get_teacher_signal(height, width, bndboxes, sigma=4, downsample=4):
         xmax = int(box[2]) // downsample
         ymax = int(box[3]) // downsample
 
-        c_x = xmin + (xmax - xmin) / 2
-        c_y = ymin + (ymax - ymin) / 2
+        c_x = xmin + (xmax - xmin) // 2
+        c_y = ymin + (ymax - ymin) // 2
 
         for y in range(ymin, ymax):
             for x in range(xmin, xmax):
@@ -151,6 +151,3 @@ class SoccerBallDataset(Dataset):
 
         return sample
 
-
-labels = ['ball']
-create_csv_folder("data/train_cnn/", "data/train/", labels=labels)

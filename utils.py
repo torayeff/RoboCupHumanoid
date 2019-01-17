@@ -114,8 +114,6 @@ class SoccerBallDataset(Dataset):
                     self.dset[img_name] = []
                 self.dset[img_name].append(data[1:])
 
-
-
         self.filenames = list(self.dset.keys())
 
         self.teacher_signals = {}

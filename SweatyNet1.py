@@ -123,13 +123,13 @@ class SweatyNet1(nn.Module):
         block5_out = self.conv_block5(mp4_out)  # N x 120 x (H/16) x (W/16) --> N x 64 x (H/16) x (W/16)
 
         # -- Decode --
-        up1_out = interpolate(block5_out, scale_factor=2, mode='bilinear', align_corners=True)  # ... --> N x 64 x (H/8) x (W/8)
+        up1_out = interpolate(block5_out, scale_factor=2, mode='bilinear', align_corners=True)  # N x 64 x (H/8) x (W/8)
 
         concat4 = torch.cat([concat3, up1_out], 1)  # N x (120 + 64) x (H/8) x (W/8)
 
         block6_out = self.conv_block6(concat4)  # N x 184 x (H/8) x (W/8) --> N x 32 x (H/8) x (W/8)
 
-        up2_out = interpolate(block6_out, scale_factor=2, mode='bilinear', align_corners=True) # ... --> N x 32 x (H/4) x (W/4)
+        up2_out = interpolate(block6_out, scale_factor=2, mode='bilinear', align_corners=True)  # N x 32 x (H/4) x (W/4)
 
         concat5 = torch.cat([concat2, up2_out], 1)  # N x (56 + 32) x (H/4) x (W/4)
 

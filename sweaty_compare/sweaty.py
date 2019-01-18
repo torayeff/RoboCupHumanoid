@@ -95,9 +95,9 @@ class SweatyNet1(nn.Module):
                 nn.ReLU(),
                 nn.BatchNorm2d(16), 
 
-                nn.Conv2d(16, 8, 3, padding=1),
+                nn.Conv2d(16, 1, 3, padding=1),
                 nn.ReLU(),
-                nn.BatchNorm2d(8)
+                nn.BatchNorm2d(1)
             )
 
 

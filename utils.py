@@ -106,8 +106,8 @@ class SoccerBallDataset(Dataset):
             next(f)
             for line in f:
                 data = line.strip().split(delimiter)
-
-                assert len(data) == 8 
+                
+                assert len(data) == 8
 
                 img_name = data[0]
                 if img_name not in self.dset.keys():
@@ -139,9 +139,9 @@ class SoccerBallDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        signal = self.teacher_signals[img_name]
+        signal, bndboxes = self.teacher_signals[img_name]
           
-        sample = {'image': image, 'signal': signal, 'img_name': img_name}
+        sample = {'image': image, 'signal': signal, 'img_name': img_name, 'bndboxes' : bndboxes}
 
         return sample
 
@@ -177,7 +177,7 @@ class SoccerBallDataset(Dataset):
         else:
             teacher_signal = signal/sg_sum
 
-        self.teacher_signals[img_name] = teacher_signal
+        self.teacher_signals[img_name] = (teacher_signal, bndboxes)
 
 
     def get_w_h_bnd_from_img(self, img_name):
@@ -221,7 +221,6 @@ class SoccerBallDataset(Dataset):
             with Pool(self.threads) as pool:
                 pool.imap(self.add_teacher_signal, self.filenames)
 
-        #save_pickle(teacher_signals)
         print("Elapsed: {:f} sec.".format(time() - tic))
 
 #create_csv_folder("data/train_cnn/", "data/train/", labels=labels)

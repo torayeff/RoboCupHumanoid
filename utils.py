@@ -104,6 +104,32 @@ def get_abs_threshold(trainset, p=0.7):
     return p * abs_threshold
 
 
+def detect_peaks(signal, threshold, dist=2):
+    """Detect peaks in 2D signal."""
+
+    signal = signal.copy()
+    peaks = []
+
+    max_ind = np.unravel_index(np.argmax(signal, axis=None), signal.shape)
+    max_val = signal[max_ind]
+
+    while max_val > threshold:
+        signal[max_ind] = 0
+        peaks.append(max_ind)
+
+        # mask pixels around peak
+        for i in range(int(max_ind[0] - dist), int(max_ind[0] + 1 + dist)):
+            for j in range(int(max_ind[1] - dist), int(max_ind[1] + 1 + dist)):
+                if (i > 0) and (i < signal.shape[0]) and (j > 0) and (j < signal.shape[1]):
+                    signal[i, j] = 0
+
+        # determine new maximum value
+        max_ind = np.unravel_index(np.argmax(signal, axis=None), signal.shape)
+        max_val = signal[max_ind]
+
+    return peaks
+
+
 def evaluate(bndboxes, detections, downsample, radius=5):
     """Calculates the number of true positives, false positives, true negatives and false negatives.
 
@@ -167,7 +193,7 @@ def evaluate(bndboxes, detections, downsample, radius=5):
 
             tps = np.sum(detected)
             fns = len(detected) - tps  # how many missed or did not detect
-            fps = len(detections) - tps # not usre
+            fps = len(detections) - tps  # other detections are false
 
     return tps, fps, tns, fns
 
@@ -196,9 +222,9 @@ def evaluate_model(model, device, trainset, verbose=False):
         bndboxes = data['bndboxes']
         with torch.no_grad():
             output_signal = np.array(model(image).squeeze())
-            # output_signal = np.array(data['signal']).squeeze()
-            output_signal = np.zeros(output_signal.shape)
-            detections = peak_local_max(output_signal, threshold_abs=threshold_abs, exclude_border=False)
+            # output_signal = np.array(data['signal']).squeeze()  # for debug
+            # output_signal = np.zeros(output_signal.shape)  # for debug
+            detections = detect_peaks(output_signal, threshold_abs)
 
         tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
         tps += tp

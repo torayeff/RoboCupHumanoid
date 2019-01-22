@@ -24,17 +24,15 @@ optimizer = torch.optim.Adam(model.parameters())
 trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=downsample)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
 
-for data in trainset:
-    print(data)
 
-    break
-# model = SweatyNet1()
-# model.load_state_dict(torch.load("pretrained_models/epoch_100.model", map_location='cpu'))
-# model.eval()
-# metrics = utils.evaluate_model(model, device, trainset, verbose=True)
-# print(metrics)
-#
-# rc = metrics['tps']/(metrics['tps'] + metrics['fns'])
-# fdr = metrics['fps']/(metrics['fps'] + metrics['tps'])
-#
-# print("RC: {}, FDR: {}".format(rc, fdr))
+model = SweatyNet1()
+model.load_state_dict(torch.load("pretrained_models/epoch_100.model", map_location='cpu'))
+model.eval()
+metrics = utils.evaluate_model(model, device, trainset, verbose=True)
+print(metrics)
+
+rc = metrics['tps']/(metrics['tps'] + metrics['fns'])
+fdr = metrics['fps']/(metrics['fps'] + metrics['tps'])
+
+print("RC: {}, FDR: {}".format(rc, fdr))
+

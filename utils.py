@@ -135,9 +135,9 @@ def evaluate(bndboxes, detections, downsample, radius=5):
     From paper: A detection is classified as TP if a local maximum with sufficient magnitude is detected within a
     radius of five pixels around the coordinates of the label.
 
-    Note: True negatives are calculated if the image does not contain object but output signal contains detections,
-        in this case the number of true negatives will be the number or detections,
-        otherwise the number of true negatives is 0.
+    Note: False positives are calculated if the image does not contain object but output signal contains detections,
+        in this case the number of false positives will be the number or detections,
+        otherwise the number of false positives is 0.
 
     Args:
         bndboxes: all bounding boxes around object of ONLY(!) one class in image (not downsampled).
@@ -345,12 +345,7 @@ class SoccerBallDataset(Dataset):
                                                                                [c_y, c_x],
                                                                                [self.sigma, self.sigma])
 
-        # gives problem with absolute threshold value
-        # sg_sum = signal.sum()
-        # if sg_sum == 0:
-        #     teacher_signal = signal
-        # else:
-        #     teacher_signal = signal/sg_sum
+        
         teacher_signal = signal
 
         self.teacher_signals[img_name] = (torch.tensor(teacher_signal), bndboxes)

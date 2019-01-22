@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 from torch.nn.functional import interpolate
+
+
 class SweatyNet1(nn.Module):
     def __init__(self):
         super().__init__()

@@ -28,7 +28,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuff
 model = SweatyNet1()
 model.load_state_dict(torch.load("pretrained_models/epoch_100.model", map_location='cpu'))
 model.eval()
-metrics = utils.evaluate_model(model, device, trainset, verbose=True)
+metrics = utils.evaluate_model(model, trainset, verbose=True)
 print(metrics)
 
 rc = metrics['tps']/(metrics['tps'] + metrics['fns'])

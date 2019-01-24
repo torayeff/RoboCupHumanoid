@@ -197,10 +197,12 @@ def evaluate(bndboxes, detections, downsample, radius=5):
     return tps, fps, tns, fns
 
 
-def evaluate_model(model, device, trainset, verbose=False):
+def evaluate_model(model, trainset, verbose=False):
     """Evaluates given model.
 
     """
+    # In order to convert tensors to numpy, we need to have those in cpu instead of gpu
+    device = torch.device('cpu')
     model.to(device)
     model.eval()
 

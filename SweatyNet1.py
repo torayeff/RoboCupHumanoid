@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.nn.functional import interpolate
 from conv_lstm import ConvLSTMCell
 
+
 class SweatyNet1(nn.Module):
     def __init__(self, output_channels = 1, use_conv_lstm=False, seq_len=6, device=None, hidden_dim=1):
         super(SweatyNet1, self).__init__()

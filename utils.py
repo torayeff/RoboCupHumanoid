@@ -13,7 +13,6 @@ from torch.utils.data import Dataset
 import pickle
 from time import time
 from multiprocessing import Pool
-from skimage.feature.peak import peak_local_max as peak_local_max
 
 
 DEBUG = False

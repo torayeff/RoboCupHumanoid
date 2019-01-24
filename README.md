@@ -13,6 +13,9 @@ example_data.csv contains information about training images with the following f
   <li><b>xmax</b> - bottom right x-coordinate of rectangle around object,</li>
   <li><b>ymax</b> - bottom right y-coordinate of rectangle around object.</li>
 </ul>
+
+To extract and label images we are using <a href="https://imagetagger.bit-bots.de/images/">Image Tagger</a>
+We used <a href="https://pjreddie.com/darknet/yolo/">YOLO</a> for automatic ball detection and then we manually verified each the detection.
 <b>Note</b>: One image file may contain multiple objects of different types.
 
 ## References

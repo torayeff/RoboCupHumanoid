@@ -197,12 +197,13 @@ def evaluate(bndboxes, detections, downsample, radius=5):
     return tps, fps, tns, fns
 
 
-def evaluate_model(model, trainset, verbose=False):
+def evaluate_model(model, device, trainset, verbose=False):
     """Evaluates given model.
 
     """
+    tic = time()
+    print("Evaluating model...")
     # In order to convert tensors to numpy, we need to have those in cpu instead of gpu
-    device = torch.device('cpu')
     model.to(device)
     model.eval()
 
@@ -222,7 +223,7 @@ def evaluate_model(model, trainset, verbose=False):
         image = data['image'].unsqueeze(0).float().to(device)
         bndboxes = data['bndboxes']
         with torch.no_grad():
-            output_signal = np.array(model(image).squeeze())
+            output_signal = np.array(model(image).squeeze().to(torch.device('cpu')))
             # output_signal = np.array(data['signal']).squeeze()  # for debug
             # output_signal = np.zeros(output_signal.shape)  # for debug
             detections = detect_peaks(output_signal, threshold_abs)
@@ -240,6 +241,8 @@ def evaluate_model(model, trainset, verbose=False):
         'fns': fns
     }
 
+    print("Elapsed: {:f} sec.".format(time() - tic))
+    print("Results: ", metrics)
     return metrics
 
 

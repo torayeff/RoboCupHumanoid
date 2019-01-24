@@ -48,7 +48,7 @@ class METADATA(Structure):
                 ("names", POINTER(c_char_p))]
 
 
-lib = CDLL("libdarknet.so", RTLD_GLOBAL)
+lib = CDLL("/home/torayevagajan/darknet/libdarknet.so", RTLD_GLOBAL)
 lib.network_width.argtypes = [c_void_p]
 lib.network_width.restype = c_int
 lib.network_height.argtypes = [c_void_p]
@@ -159,4 +159,5 @@ if __name__ == "__main__":
     r = detect(net, meta, "data/dog.jpg".encode('utf-8'))
     print(r)
     
+
 

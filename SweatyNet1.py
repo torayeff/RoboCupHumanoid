@@ -101,10 +101,10 @@ class SweatyNet1(nn.Module):
             nn.ReLU()
         )
 
-        self.use_conv_lstm = use_conv_lstm
-
-        # It is initialized, but not used if we dont set the flag
-        self.conv_lstm = ConvLSTMCell(output_channels, hidden_dim, seq_len, device)
+        # self.use_conv_lstm = use_conv_lstm
+        #
+        # # It is initialized, but not used if we dont set the flag
+        # self.conv_lstm = ConvLSTMCell(output_channels, hidden_dim, seq_len, device)
 
     def forward(self, x, h_t=None, c_t=None):
         # -- Encode --
@@ -141,8 +141,8 @@ class SweatyNet1(nn.Module):
 
         block7_out = self.conv_block7(concat5)  # N x 88 x (H/4) x (W/4) --> N x 1 x (H/4) x (W/4)
 
-        if self.use_conv_lstm:
-            return self.conv_lstm(block7_out, h_t, c_t)
+        # if self.use_conv_lstm:
+        #     return self.conv_lstm(block7_out, h_t, c_t)
 
         return block7_out
 

@@ -1,61 +1,172 @@
-import torch
+"""
+Credits to https://github.com/ndrplz/ConvLSTM_pytorch
+"""
 import torch.nn as nn
+from torch.autograd import Variable
+import torch
 
 
 class ConvLSTMCell(nn.Module):
-	def __init__(self, input_channels, hidden_dim, seq_len,device, kernel_size=3):
-		super(ConvLSTMCell, self).__init__()
 
-		self.input_channels = input_channels
-		self.hidden_dim = hidden_dim
-		self.seq_len = seq_len
-		self.kernel_size = kernel_size
-		self.padding = kernel_size // 3
-		self.device = device
+    def __init__(self, input_size, input_dim, hidden_dim, kernel_size, bias):
+        """
+        Initialize ConvLSTM cell.
+        
+        Parameters
+        ----------
+        input_size: (int, int)
+            Height and width of input tensor as (height, width).
+        input_dim: int
+            Number of channels of input tensor.
+        hidden_dim: int
+            Number of channels of hidden state.
+        kernel_size: (int, int)
+            Size of the convolutional kernel.
+        bias: bool
+            Whether or not to add the bias.
+        """
 
-		self.conv = nn.Conv2d(self.input_channels + self.hidden_dim, 
-			4 * self.hidden_dim, padding=self.padding, kernel_size=self.kernel_size)
+        super(ConvLSTMCell, self).__init__()
 
-	def forward(self, x, h_t=None, c_t=None):
-		"""Forward step of the convLSTMCell
+        self.height, self.width = input_size
+        self.input_dim  = input_dim
+        self.hidden_dim = hidden_dim
 
-		Args:
-			x: input tensor of shape (batch_size, channels, height, width)
-			h_t: previous hidden vector of shape (batch_size, hidden_dim, height, width)
-			c_t: previous cell state of shape (batch_size, hidden_dim, height, width)
-		"""
-		#print("Size: ", x.size())
-		if(h_t is None and c_t is None):
-			h_t, c_t = self.get_hidden_state(x.size(0), x.size(2), x.size(3))
-		elif( (h_t is not None and c_t is None) or (h_t is None and c_t is not None) ):
-			raise RuntimeError()
+        self.kernel_size = kernel_size
+        self.padding     = kernel_size[0] // 2, kernel_size[1] // 2
+        self.bias        = bias
+        
+        self.conv = nn.Conv2d(in_channels=self.input_dim + self.hidden_dim,
+                              out_channels=4 * self.hidden_dim,
+                              kernel_size=self.kernel_size,
+                              padding=self.padding,
+                              bias=self.bias)
+
+    def forward(self, input_tensor, cur_state):
+        
+        h_cur, c_cur = cur_state
+        
+        combined = torch.cat([input_tensor, h_cur], dim=1)  # concatenate along channel axis
+        
+        combined_conv = self.conv(combined)
+        cc_i, cc_f, cc_o, cc_g = torch.split(combined_conv, self.hidden_dim, dim=1) 
+        i = torch.sigmoid(cc_i)
+        f = torch.sigmoid(cc_f)
+        o = torch.sigmoid(cc_o)
+        g = torch.tanh(cc_g)
+
+        c_next = f * c_cur + i * g
+        h_next = o * torch.tanh(c_next)
+        
+        return h_next, c_next
+
+    def init_hidden(self, batch_size):
+        return (Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda(),
+                Variable(torch.zeros(batch_size, self.hidden_dim, self.height, self.width)).cuda())
 
 
-		input_hidden = torch.cat([x, h_t], dim=1)
-		#print("Hidden ", input_hidden.size())
-		conv_output = self.conv(input_hidden)  
+class ConvLSTM(nn.Module):
 
-		#print("conv_output " , conv_output.size())
+    def __init__(self, input_size, input_dim, hidden_dim, kernel_size, num_layers,
+                 batch_first=False, bias=True, return_all_layers=False):
+        super(ConvLSTM, self).__init__()
 
-		i_cell, f_cell, o_cell, g_cell = torch.split(conv_output, self.hidden_dim, dim=1)
+        self._check_kernel_size_consistency(kernel_size)
 
-		i_t = nn.Sigmoid()(i_cell)
-		f_t = nn.Sigmoid()(f_cell)
-		o_t = nn.Sigmoid()(o_cell)
-		g_t = nn.Tanh()(g_cell) 
+        # Make sure that both `kernel_size` and `hidden_dim` are lists having len == num_layers
+        kernel_size = self._extend_for_multilayer(kernel_size, num_layers)
+        hidden_dim  = self._extend_for_multilayer(hidden_dim, num_layers)
+        if not len(kernel_size) == len(hidden_dim) == num_layers:
+            raise ValueError('Inconsistent list length.')
 
-		# hidden and Cell state for the next iteration
-		c_t = f_t * c_t + i_t * g_t
-		h_t = o_t * nn.Tanh()(c_t)
+        self.height, self.width = input_size
 
-		#print("h_t - > " , h_t.size())
-			
-		return h_t, c_t
+        self.input_dim  = input_dim
+        self.hidden_dim = hidden_dim
+        self.kernel_size = kernel_size
+        self.num_layers = num_layers
+        self.batch_first = batch_first
+        self.bias = bias
+        self.return_all_layers = return_all_layers
 
+        cell_list = []
+        for i in range(0, self.num_layers):
+            cur_input_dim = self.input_dim if i == 0 else self.hidden_dim[i-1]
 
-	def get_hidden_state(self, batch_size, height, width):
-		h = torch.zeros(batch_size, self.hidden_dim, height, width, device = self.device)
-		c = torch.zeros(batch_size, self.hidden_dim, height, width, device = self.device)
+            cell_list.append(ConvLSTMCell(input_size=(self.height, self.width),
+                                          input_dim=cur_input_dim,
+                                          hidden_dim=self.hidden_dim[i],
+                                          kernel_size=self.kernel_size[i],
+                                          bias=self.bias))
 
-		return h, c
+        self.cell_list = nn.ModuleList(cell_list)
 
+    def forward(self, input_tensor, hidden_state=None):
+        """
+        
+        Parameters
+        ----------
+        input_tensor: todo 
+            5-D Tensor either of shape (t, b, c, h, w) or (b, t, c, h, w)
+        hidden_state: todo
+            None. todo implement stateful
+            
+        Returns
+        -------
+        last_state_list, layer_output
+        """
+        if not self.batch_first:
+            # (t, b, c, h, w) -> (b, t, c, h, w)
+            input_tensor = input_tensor.permute(1, 0, 2, 3, 4)
+
+        # Implement stateful ConvLSTM
+        if hidden_state is not None:
+            raise NotImplementedError()
+        else:
+            hidden_state = self._init_hidden(batch_size=input_tensor.size(0))
+
+        layer_output_list = []
+        last_state_list   = []
+
+        seq_len = input_tensor.size(1)
+        cur_layer_input = input_tensor
+
+        for layer_idx in range(self.num_layers):
+
+            h, c = hidden_state[layer_idx]
+            output_inner = []
+            for t in range(seq_len):
+
+                h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :, :],
+                                                 cur_state=[h, c])
+                output_inner.append(h)
+
+            layer_output = torch.stack(output_inner, dim=1)
+            cur_layer_input = layer_output
+
+            layer_output_list.append(layer_output)
+            last_state_list.append([h, c])
+
+        if not self.return_all_layers:
+            layer_output_list = layer_output_list[-1:]
+            last_state_list   = last_state_list[-1:]
+
+        return layer_output_list, last_state_list
+
+    def _init_hidden(self, batch_size):
+        init_states = []
+        for i in range(self.num_layers):
+            init_states.append(self.cell_list[i].init_hidden(batch_size))
+        return init_states
+
+    @staticmethod
+    def _check_kernel_size_consistency(kernel_size):
+        if not (isinstance(kernel_size, tuple) or
+                    (isinstance(kernel_size, list) and all([isinstance(elem, tuple) for elem in kernel_size]))):
+            raise ValueError('`kernel_size` must be tuple or list of tuples')
+
+    @staticmethod
+    def _extend_for_multilayer(param, num_layers):
+        if not isinstance(param, list):
+            param = [param] * num_layers
+        return param

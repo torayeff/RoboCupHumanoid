@@ -4,8 +4,9 @@ from torch.nn.functional import interpolate
 from conv_lstm import ConvLSTMCell
 from conv_gru import ConvGruCell
 
+
 class SweatyNet1(nn.Module):
-    def __init__(self, output_channels = 1, device=None, hidden_dim=1):
+    def __init__(self, output_channels=1, device=None, hidden_dim=1):
         super(SweatyNet1, self).__init__()
 
         # -- Encoder --
@@ -100,8 +101,6 @@ class SweatyNet1(nn.Module):
             nn.BatchNorm2d(1),
             nn.ReLU()
         )
-
-        #self.use_conv_lstm = use_conv_lstm
 
         # It is initialized, but not used if we dont set the flag
         self.conv_gru = ConvGruCell(output_channels, output_channels, device=device)

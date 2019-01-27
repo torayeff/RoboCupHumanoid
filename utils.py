@@ -15,6 +15,8 @@ from time import time
 from multiprocessing import Pool
 
 DEBUG = False
+
+
 #
 # label::ball | frame1747.jpg | 640 | 480 | 319 | 137 | 409 | 230 | 364.0 | 183.5 | 90 | 93
 # [format: "label::annotation_type|filename|img_width|img_height|x1|y1|x2|y2|center_x|center_y|width|height"]
@@ -47,28 +49,27 @@ def create_csv_from_txt_files(filename, csv_path='', csv_delimiter=';'):
 
                 if line.startswith("label::ball") or line.startswith("ball"):
                     data = line.split('|')
-                    csv_rows += data[1] + csv_delimiter #image name
+                    csv_rows += data[1] + csv_delimiter  # image name
 
                     if len(data) > 3:
                         csv_rows += data[2] + csv_delimiter  # img width
                         csv_rows += data[3] + csv_delimiter  # img height
                         csv_rows += data[0].split("::")[1]  # label
-                        csv_rows += csv_delimiter + data[4] #xmin
-                        csv_rows += csv_delimiter + data[5] #ymin
-                        csv_rows += csv_delimiter + data[6] #xmax
-                        csv_rows += csv_delimiter + data[7] #ymax
+                        csv_rows += csv_delimiter + data[4]  # xmin
+                        csv_rows += csv_delimiter + data[5]  # ymin
+                        csv_rows += csv_delimiter + data[6]  # xmax
+                        csv_rows += csv_delimiter + data[7]  # ymax
 
                     else:
                         csv_rows += '640' + csv_delimiter
                         csv_rows += '480' + csv_delimiter
                         csv_rows += 'ball'
 
-
-
                     csv_rows += '\n'
             file_csv.write(csv_rows)
 
-def get_csv_lines(filename, labels):
+
+def get_csv_lines(filename):
     """Creates CSV lines from PASCAL VOC formatted XML file."""
     tree = xml.etree.ElementTree.parse(filename)
 
@@ -82,6 +83,8 @@ def get_csv_lines(filename, labels):
 
     lines = []
 
+    ball_found = False
+
     for obj in root.findall('object'):
         label = obj.find('name').text
         bndbox = obj.find('bndbox')
@@ -90,20 +93,25 @@ def get_csv_lines(filename, labels):
         xmax = bndbox.find('xmax').text
         ymax = bndbox.find('ymax').text
 
-        if label in labels:
+        if label == 'ball':
+            ball_found = True
             objdata = [label, xmin, ymin, xmax, ymax]
             line = filedata + objdata
             lines.append(line)
 
+    if not ball_found:
+        print(filedata)
+        lines.append(filedata + ['ball'])
+
     return lines
 
 
-def create_csv_folder(xml_folder, csv_folder, labels, sep=','):
+def create_csv_folder(xml_folder, csv_folder, sep=','):
     """Creates CSV folder from XML PASCAL VOC folder."""
 
     strdata = ""
     for fn in glob.glob(xml_folder + "*.xml"):
-        lines = get_csv_lines(fn, labels)
+        lines = get_csv_lines(fn)
 
         for line in lines:
             strdata += sep.join(line) + "\n"
@@ -200,6 +208,10 @@ def evaluate(bndboxes, detections, downsample, radius=5):
     """
 
     centers = []
+
+    # dirty hack to avoid empty boxes
+    bndboxes = [box for box in bndboxes if len(box) == 4]
+
     for box in bndboxes:
         xmin = int(box[0]) // downsample
         ymin = int(box[1]) // downsample
@@ -247,16 +259,20 @@ def evaluate(bndboxes, detections, downsample, radius=5):
     return tps, fps, tns, fns
 
 
-def evaluate_model(model, device, trainset, verbose=False):
+def evaluate_model(model, device, trainset, verbose=False, debug=False):
     """Evaluates given model.
 
     """
     tic = time()
     print("Evaluating model...")
     # In order to convert tensors to numpy, we need to have those in cpu instead of gpu
-    model.to(device)
-    model.eval()
 
+    # model is None when debug=True
+    if model:
+        model.to(device)
+        model.eval()
+
+    print("Calculating threshold fro training set...")
     threshold_abs = get_abs_threshold(trainset, 0.7)
 
     downsample = trainset[0]['image'].shape[1] / trainset[0]['signal'].shape[1]
@@ -273,9 +289,11 @@ def evaluate_model(model, device, trainset, verbose=False):
         image = data['image'].unsqueeze(0).float().to(device)
         bndboxes = data['bndboxes']
         with torch.no_grad():
-            output_signal = np.array(model(image).squeeze().to(torch.device('cpu')))
-            # output_signal = np.array(data['signal']).squeeze()  # for debug
-            # output_signal = np.zeros(output_signal.shape)  # for debug
+            if debug:
+                output_signal = np.array(data['signal']).squeeze()  # for debug
+                # output_signal = np.zeros(output_signal.shape)  # for debug
+            else:
+                output_signal = np.array(model(image).squeeze().to(torch.device('cpu')))
             detections = detect_peaks(output_signal, threshold_abs)
 
         tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
@@ -385,7 +403,7 @@ class SoccerBallDataset(Dataset):
         signal = np.zeros((1, s_height, s_width))
 
         for box in bndboxes:
-            if len(box) > 0: # if we have bndboxes -> means if we have a ball.
+            if len(box) > 0:  # if we have bndboxes -> means if we have a ball.
                 xmin = int(box[0]) // self.downsample
                 ymin = int(box[1]) // self.downsample
                 xmax = int(box[2]) // self.downsample
@@ -447,5 +465,6 @@ class SoccerBallDataset(Dataset):
 
         print("Elapsed: {:f} sec.".format(time() - tic))
 
-# labels = ['ball']
-# create_csv_folder("data/train_cnn/", "data/train/", labels=labels)
+
+# create_csv_from_txt_files('data/imageset_432.txt', 'data/imageset_432/')
+# create_csv_folder('data/train_cnn/', 'data/lab1/', sep=';')

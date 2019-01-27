@@ -15,7 +15,7 @@ downsample = 4
 batch_size = 4
 
 model = SweatyNet1()
-model.load_state_dict(torch.load("pretrained_models/epoch_100.model", map_location='cpu'))
+model.load_state_dict(torch.load("pretrained_models/epoch_50_2050.model", map_location='cpu'))
 model.to(device)
 #
 # criterion = nn.MSELoss()

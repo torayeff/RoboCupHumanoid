@@ -14,9 +14,59 @@ import pickle
 from time import time
 from multiprocessing import Pool
 
-
 DEBUG = False
+#
+# label::ball | frame1747.jpg | 640 | 480 | 319 | 137 | 409 | 230 | 364.0 | 183.5 | 90 | 93
+# [format: "label::annotation_type|filename|img_width|img_height|x1|y1|x2|y2|center_x|center_y|width|height"]
+# """
+#             The columns in the data are organized as following:
+#                 0 -> img_name
+#                 1 -> width of the image
+#                 2 -> height of the image
+#                 3 -> label
+#                 4 -> xmin
+#                 5 -> ymin
+#                 6 -> xmax
+#                 7 -> ymax
+#         """
 
+
+def create_csv_from_txt_files(filename, csv_path='', csv_delimiter=';'):
+    """Writes a csv file from the text file exported from image tagger
+
+    :param filename: the text file exported form image tagger
+           csv_delimiter: csv delimiter, by default ;
+            [format: "label::annotation_type|filename|img_width|img_height|x1|y1|x2|y2|center_x|center_y|width|height"]
+    """
+    with open(filename) as file:
+        with open(csv_path + "data.csv", "w") as file_csv:
+            csv_header = 'image_file;width;height;label;xmin;ymin;xmax;ymax\n'
+            file_csv.write(csv_header)
+            csv_rows = ''
+            for line in file:
+
+                if line.startswith("label::ball") or line.startswith("ball"):
+                    data = line.split('|')
+                    csv_rows += data[1] + csv_delimiter #image name
+
+                    if len(data) > 3:
+                        csv_rows += data[2] + csv_delimiter  # img width
+                        csv_rows += data[3] + csv_delimiter  # img height
+                        csv_rows += data[0].split("::")[1]  # label
+                        csv_rows += csv_delimiter + data[4] #xmin
+                        csv_rows += csv_delimiter + data[5] #ymin
+                        csv_rows += csv_delimiter + data[6] #xmax
+                        csv_rows += csv_delimiter + data[7] #ymax
+
+                    else:
+                        csv_rows += '640' + csv_delimiter
+                        csv_rows += '480' + csv_delimiter
+                        csv_rows += 'ball'
+
+
+
+                    csv_rows += '\n'
+            file_csv.write(csv_rows)
 
 def get_csv_lines(filename, labels):
     """Creates CSV lines from PASCAL VOC formatted XML file."""
@@ -68,8 +118,8 @@ def create_csv_folder(xml_folder, csv_folder, labels, sep=','):
         f.write(strdata.strip())
 
 
-def save_pickle(data, output_path = 'data/teacher_signals'):
-    with open(output_path + '.pickle' , 'wb') as handler:
+def save_pickle(data, output_path='data/teacher_signals'):
+    with open(output_path + '.pickle', 'wb') as handler:
         pickle.dump(data, handler)
 
 
@@ -250,7 +300,7 @@ class SoccerBallDataset(Dataset):
     """Soccer Balls dataset."""
 
     def __init__(self, csv_file, root_dir, transform=None, sigma=4, downsample=4,
-                 delimiter=",", labels=['ball'], threads=1):
+                 delimiter=";", labels=['ball'], threads=1):
         """
         Args:
             csv_file: Path to csv file.
@@ -281,8 +331,8 @@ class SoccerBallDataset(Dataset):
             next(f)
             for line in f:
                 data = line.strip().split(delimiter)
-                
-                assert len(data) == 8
+
+                # assert len(data) == 8
 
                 img_name = data[0]
                 if img_name not in self.dset.keys():
@@ -315,7 +365,7 @@ class SoccerBallDataset(Dataset):
             image = self.transform(image)
 
         signal, bndboxes = self.teacher_signals[img_name]
-          
+
         sample = {'image': image, 'signal': signal, 'img_name': img_name, 'bndboxes': bndboxes}
 
         return sample
@@ -335,22 +385,22 @@ class SoccerBallDataset(Dataset):
         signal = np.zeros((1, s_height, s_width))
 
         for box in bndboxes:
-            xmin = int(box[0]) // self.downsample
-            ymin = int(box[1]) // self.downsample
-            xmax = int(box[2]) // self.downsample
-            ymax = int(box[3]) // self.downsample
+            if len(box) > 0: # if we have bndboxes -> means if we have a ball.
+                xmin = int(box[0]) // self.downsample
+                ymin = int(box[1]) // self.downsample
+                xmax = int(box[2]) // self.downsample
+                ymax = int(box[3]) // self.downsample
 
-            c_x = (xmax + xmin) / 2
-            c_y = (ymax + ymin) / 2
+                c_x = (xmax + xmin) / 2
+                c_y = (ymax + ymin) / 2
 
-            for y in range(ymin, ymax + 1):
-                for x in range(xmin, xmax + 1):
-                    if (y >= 0) and (x >= 0) and (y < s_height) and (x < s_width):
-                        signal[0, y, x] += scipy.stats.multivariate_normal.pdf([y, x],
-                                                                               [c_y, c_x],
-                                                                               [self.sigma, self.sigma])
+                for y in range(ymin, ymax + 1):
+                    for x in range(xmin, xmax + 1):
+                        if (y >= 0) and (x >= 0) and (y < s_height) and (x < s_width):
+                            signal[0, y, x] += scipy.stats.multivariate_normal.pdf([y, x],
+                                                                                   [c_y, c_x],
+                                                                                   [self.sigma, self.sigma])
 
-        
         teacher_signal = signal
 
         self.teacher_signals[img_name] = (torch.tensor(teacher_signal), bndboxes)
@@ -365,13 +415,13 @@ class SoccerBallDataset(Dataset):
                 width: Width of the image.
                 bndboxes: Coordinates of bounding boxes around objects as a list of tuples.
         """
-        width = self.dset[img_name][0][0] 
+        width = self.dset[img_name][0][0]
         height = self.dset[img_name][0][1]
         bndboxes = []
 
         # CAUTION ! What if there is no ball in the image? We should clean it
         for obj in self.dset[img_name]:
-            if obj[2] in self.labels:   # only get the boundary boxes of the labels we are interested in
+            if obj[2] in self.labels:  # only get the boundary boxes of the labels we are interested in
                 bndboxes.append(obj[3:])  # adding the xmin, ymin, xmax, ymax
 
         if DEBUG and len(bndboxes) == 0:
@@ -396,7 +446,6 @@ class SoccerBallDataset(Dataset):
                 pool.imap(self.add_teacher_signal, self.filenames)
 
         print("Elapsed: {:f} sec.".format(time() - tic))
-
 
 # labels = ['ball']
 # create_csv_folder("data/train_cnn/", "data/train/", labels=labels)

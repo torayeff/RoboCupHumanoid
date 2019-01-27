@@ -1,11 +1,10 @@
 import torch
 import torch.nn as nn
 from torch.nn.functional import interpolate
-from conv_lstm import ConvLSTMCell
 
 
 class SweatyNet1(nn.Module):
-    def __init__(self, output_channels=1, use_conv_lstm=False, seq_len=6, device=None, hidden_dim=1):
+    def __init__(self, output_channels=1):
         super(SweatyNet1, self).__init__()
 
         # -- Encoder --
@@ -101,11 +100,6 @@ class SweatyNet1(nn.Module):
             nn.ReLU()
         )
 
-        # self.use_conv_lstm = use_conv_lstm
-        #
-        # # It is initialized, but not used if we dont set the flag
-        # self.conv_lstm = ConvLSTMCell(output_channels, hidden_dim, seq_len, device)
-
     def forward(self, x, h_t=None, c_t=None):
         # -- Encode --
         block1_out = self.conv_block1(x)  # N x 3 x H x W --> N x 8 x H x W
@@ -141,8 +135,4 @@ class SweatyNet1(nn.Module):
 
         block7_out = self.conv_block7(concat5)  # N x 88 x (H/4) x (W/4) --> N x 1 x (H/4) x (W/4)
 
-        # if self.use_conv_lstm:
-        #     return self.conv_lstm(block7_out, h_t, c_t)
-
         return block7_out
-

@@ -272,7 +272,7 @@ def evaluate_model(model, device, trainset, verbose=False, debug=False):
         model.to(device)
         model.eval()
 
-    print("Calculating threshold fro training set...")
+    print("Calculating threshold for training set...")
     threshold_abs = get_abs_threshold(trainset, 0.7)
 
     downsample = trainset[0]['image'].shape[1] / trainset[0]['signal'].shape[1]

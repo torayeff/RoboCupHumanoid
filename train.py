@@ -9,9 +9,11 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--load', default='', help='folder where you can load a pretrained model')
 parser.add_argument('--convLstm', default='no', help='to use or not convLstm')
+parser.add_argument('--epochs', type=int, default=100,  help='total number of epochs')
 
 opt = parser.parse_args()
 
+epochs = opt.epochs
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -31,8 +33,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, 
 
 print("# examples: ", len(trainset))
 
-epochs = 100
-print("Starting training for {}...".format(epochs))
+print("Starting training for {} epochs...".format(epochs))
 
 for epoch in range(epochs):
     epoch_loss = 0
@@ -58,3 +59,6 @@ for epoch in range(epochs):
     epoch_loss /= len(trainset)
     epoch_time = time.time() - tic
     print("Epoch: {}, loss: {}, time: {:.5f} seconds".format(epoch + 1, epoch_loss, epoch_time))
+
+
+utils.evaluate_model(model, device, trainset)

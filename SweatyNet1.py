@@ -97,8 +97,8 @@ class SweatyNet1(nn.Module):
             nn.BatchNorm2d(16),
 
             nn.Conv2d(16, 1, 3, stride=1, padding=1),  # N x 16 x (H/4) x (W/4) --> N x 1 x (H/4) x (W/4)
-            nn.ReLU(),
-            nn.BatchNorm2d(1),
+            #nn.ReLU(),
+            #nn.BatchNorm2d(1),
         )
 
     def forward(self, x):

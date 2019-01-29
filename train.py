@@ -3,7 +3,14 @@ import torch.nn as nn
 import utils as utils
 from SweatyNet1 import SweatyNet1
 import time
+import argparse
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--load', default='', help='folder where you can load a pretrained model')
+parser.add_argument('--convLstm', default='no', help='to use or not convLstm')
+
+opt = parser.parse_args()
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -11,6 +18,10 @@ print(device)
 
 model = SweatyNet1()
 model.to(device)
+
+if opt.load != '':
+    print("Loading Sweaty")
+    model.load_state_dict(torch.load(opt.load))
 
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters())
@@ -21,6 +32,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, 
 print("# examples: ", len(trainset))
 
 epochs = 100
+print("Starting training for {}...".format(epochs))
 
 for epoch in range(epochs):
     epoch_loss = 0

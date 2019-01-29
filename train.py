@@ -4,6 +4,8 @@ import utils as utils
 from SweatyNet1 import SweatyNet1
 import time
 
+
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
 
@@ -13,7 +15,7 @@ model.to(device)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters())
 
-trainset = utils.SoccerBallDataset("data/train_images/lab1_data.csv", "data/train_images", downsample=4)
+trainset = utils.SoccerBallDataset("data/train_images/data.csv", "data/train_images", downsample=4)
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
 
 print("# examples: ", len(trainset))
@@ -39,7 +41,7 @@ for epoch in range(epochs):
         epoch_loss += loss.item()
 
     if (epoch + 1) % 10 == 0:
-        torch.save(model.state_dict(), "epoch_{}.model".format(epoch + 1))
+        torch.save(model.state_dict(), "pretrained_models/joan/epoch_{}.model".format(epoch + 1))
 
     epoch_loss /= len(trainset)
     epoch_time = time.time() - tic

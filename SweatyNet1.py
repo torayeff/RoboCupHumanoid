@@ -12,93 +12,95 @@ class SweatyNet1(nn.Module):
         # ConvBlock1
         self.conv_block1 = nn.Sequential(
             nn.Conv2d(3, 8, 3, stride=1, padding=1),  # N x 3 x H x W --> N x 8 x H x W
-            nn.ReLU(),
-            nn.BatchNorm2d(8)
+            nn.BatchNorm2d(8),
+            nn.ReLU()
         )
 
         # ConvBlock2
         self.conv_block2 = nn.Sequential(
             nn.Conv2d(8, 16, 3, stride=1, padding=1),  # N x 8 x (H/2) x (W/2) --> N x 16 x (H/2) x (H/2)
-            nn.ReLU(),
             nn.BatchNorm2d(16),
+            nn.ReLU(),
 
             nn.Conv2d(16, 16, 3, stride=1, padding=1),  # N x 16 x (H/2) x (W/2) --> N x 16 x (H/2) x (H/2)
+            nn.BatchNorm2d(16),
             nn.ReLU(),
-            nn.BatchNorm2d(16)
         )
 
         # ConvBlock3
         self.conv_block3 = nn.Sequential(
             nn.Conv2d(24, 32, 3, stride=1, padding=1),  # N x 24 x (H/4) x (W/4) --> N x 32 x (H/4) x (W/4)
-            nn.ReLU(),
             nn.BatchNorm2d(32),
+            nn.ReLU(),
 
             nn.Conv2d(32, 32, 3, stride=1, padding=1),  # N x 32 x (H/4) x (W/4) --> N x 32 x (H/4) x (W/4)
-            nn.ReLU(),
             nn.BatchNorm2d(32),
+            nn.ReLU(),
+
         )
 
         # ConvBlock4
         self.conv_block4 = nn.Sequential(
             nn.Conv2d(56, 64, 3, stride=1, padding=1),  # N x 56 x (H/8) x (W/8) --> N x 64 x (H/8) x (W/8)
-            nn.ReLU(),
             nn.BatchNorm2d(64),
+            nn.ReLU(),
 
             nn.Conv2d(64, 64, 3, stride=1, padding=1),  # N x 64 x (H/8) x (W/8) --> N x 64 x (H/8) x (W/8)
-            nn.ReLU(),
             nn.BatchNorm2d(64),
+            nn.ReLU(),
 
             nn.Conv2d(64, 64, 3, stride=1, padding=1),  # N x 64 x (H/8) x (W/8) --> N x 64 x (H/8) x (W/8)
-            nn.ReLU(),
             nn.BatchNorm2d(64),
+            nn.ReLU(),
+
         )
 
         # ConvBlock5
         self.conv_block5 = nn.Sequential(
             nn.Conv2d(120, 128, 3, stride=1, padding=1),  # N x 120 x (H/16) x (W/16) --> N x 128 x (H/16) x (W/16)
-            nn.ReLU(),
             nn.BatchNorm2d(128),
+            nn.ReLU(),
 
             nn.Conv2d(128, 128, 3, stride=1, padding=1),  # N x 128 x (H/16) x (W/16) --> N x 128 x (H/16) x (W/16)
-            nn.ReLU(),
             nn.BatchNorm2d(128),
+            nn.ReLU(),
 
             nn.Conv2d(128, 128, 3, stride=1, padding=1),  # N x 128 x (H/16) x (W/16) --> N x 128 x (H/16) x (W/16)
-            nn.ReLU(),
             nn.BatchNorm2d(128),
+            nn.ReLU(),
 
             nn.Conv2d(128, 64, 3, stride=1, padding=1),  # N x 128 x (H/16) x (W/16) --> N x 64 x (H/16) x (W/16)
-            nn.ReLU(),
             nn.BatchNorm2d(64),
+            nn.ReLU()
         )
 
         # -- Decoder --
         self.conv_block6 = nn.Sequential(
             nn.Conv2d(184, 64, 1, stride=1, padding=0),  # N x 184 x (H/8) x (W/8) --> N x 64 x (H/8) x (W/8)
-            nn.ReLU(),
             nn.BatchNorm2d(64),
+            nn.ReLU(),
 
             nn.Conv2d(64, 32, 3, stride=1, padding=1),  # N x 64 x (H/8) x (W/8) --> N x 32 x (H/8) x (W/8)
-            nn.ReLU(),
             nn.BatchNorm2d(32),
+            nn.ReLU(),
 
             nn.Conv2d(32, 32, 3, stride=1, padding=1),  # N x 32 x (H/8) x (W/8) --> N x 32 x (H/8) x (W/8)
-            nn.ReLU(),
             nn.BatchNorm2d(32),
+            nn.ReLU(),
         )
 
         self.conv_block7 = nn.Sequential(
             nn.Conv2d(88, 16, 1, stride=1, padding=0),  # N x 88 x (H/4) x (W/4) --> N x 16 x (H/4) x (W/4)
-            nn.ReLU(),
             nn.BatchNorm2d(16),
+            nn.ReLU(),
 
             nn.Conv2d(16, 16, 3, stride=1, padding=1),  # N x 16 x (H/4) x (W/4) --> N x 16 x (H/4) x (W/4)
-            nn.ReLU(),
             nn.BatchNorm2d(16),
+            nn.ReLU(),
 
             nn.Conv2d(16, 1, 3, stride=1, padding=1),  # N x 16 x (H/4) x (W/4) --> N x 1 x (H/4) x (W/4)
-            #nn.ReLU(),
-            #nn.BatchNorm2d(1),
+            nn.BatchNorm2d(1),
+            nn.ReLU()
         )
 
     def forward(self, x):

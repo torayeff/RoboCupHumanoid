@@ -13,12 +13,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--load', default='', help='path to pretrained Sweaty model')
 parser.add_argument('--convLstm', type=int, default=0, help='flag for conv-gru layer. By default it does not use it')
 parser.add_argument('--epochs', type=int, default=100,  help='total number of epochs')
-parser.add_argument('--batch', type=int, default=4,  help='batch size')
+parser.add_argument('--batch_size', type=int, default=4,  help='batch size')
 
 opt = parser.parse_args()
 
 epochs = opt.epochs
-batch = opt.batch
+batch_size = opt.batch_size
 use_lstm = opt.convLstm
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -48,7 +48,7 @@ else:
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
 trainset = utils.SoccerBallDataset("data/train_images/data.csv", "data/train_images", downsample=4)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch, shuffle=shuffle, num_workers=2)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=shuffle, num_workers=2)
 
 print("# examples: ", len(trainset))
 

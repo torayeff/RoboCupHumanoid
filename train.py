@@ -26,7 +26,7 @@ print(device)
 
 model = SweatyNet1()
 model.to(device)
-
+print(model)
 if opt.load != '':
     print("Loading Sweaty")
     model.load_state_dict(torch.load(opt.load))
@@ -79,7 +79,7 @@ for epoch in range(epochs):
         epoch_loss += loss.item()
 
     if (epoch + 1) % 10 == 0:
-        torch.save(model.state_dict(), "pretrained_models/joan/epoch_{}_stepLrNoBR.model".format(epoch + 1))
+        torch.save(model.state_dict(), "pretrained_models/joan/epoch_{}.model".format(epoch + 1))
 
     epoch_loss /= len(trainset)
     epoch_time = time.time() - tic

@@ -27,7 +27,7 @@ class ConvGruCell(nn.Module):
 
         Args
             input: input tensor of shape (batch/seq_len, channel, height, width)
-            h_t: previous hidden vector of shape (batch_size, hidden_dim, height, width)
+            h_t: previous hidden vector of shape (1, hidden_dim, height, width)
         """
 
         if h_t is None:

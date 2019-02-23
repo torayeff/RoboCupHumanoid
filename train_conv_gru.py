@@ -10,7 +10,7 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--load', default='', help='path to pretrained Sweaty model')
+    parser.add_argument('--load', required=True, help='path to pretrained Sweaty model')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
     parser.add_argument('--batch_size', type=int, default=16, help='batch size')
 

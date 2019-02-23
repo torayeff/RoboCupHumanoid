@@ -1,53 +1,51 @@
+import argparse
 import torch
 import torch.nn as nn
 import utils as utils
 from SweatyNet1 import SweatyNet1
+from conv_gru import ConvGruCell
 import time
 import argparse
-from torch.optim import lr_scheduler
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--load', default='', help='path to pretrained Sweaty model')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
-    parser.add_argument('--batch_size', type=int, default=4, help='batch size')
+    parser.add_argument('--batch_size', type=int, default=16, help='batch size')
+
     opt = parser.parse_args()
+
     epochs = opt.epochs
     batch_size = opt.batch_size
+
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
-    model = init_sweaty(device, opt.load)
+    print("Initializing conv-gru cell...")
+    model, convGruModel = init_sweaty_gru(device, opt.load)
 
-    criterion, optimizer, trainloader, trainset = init_training_configs(batch_size, model)
+    parameters = list(model.parameters()) + list(convGruModel.parameters())
+    optimizer = torch.optim.Adam(parameters)
+    h_t = None
 
-    train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset)
-
-    utils.evaluate_model(model, device, trainset)
-
-
-def init_training_configs(batch_size, model):
-    criterion = nn.MSELoss()
-    optimizer = torch.optim.Adam(model.parameters())
-    # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    trainset = utils.SoccerBallDataset("data/train_images/data.csv", "data/train_images", downsample=4)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-    print("# examples: ", len(trainset))
-    return criterion, optimizer, trainloader, trainset
-
-# TODO: Share it
-def init_sweaty(device, load_path):
+def init_sweaty_gru(device, load_path):
     model = SweatyNet1()
     model.to(device)
     print(model)
     if load_path != '':
         print("Loading Sweaty")
         model.load_state_dict(torch.load(load_path))
-    return model
+    else:
+        raise Exception('Fine tuning the model, there should be a loading path.')
+
+    convGruModel = ConvGruCell(1, 1, device=device)
+    convGruModel.to(device)
+
+    return model, convGruModel
 
 
-def train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset):
+def train_sweatyGru(criterion, device, epochs, model, optimizer, trainloader, trainset):
     print("Starting training for {} epochs...".format(epochs))
     for epoch in range(epochs):
         epoch_loss = 0
@@ -74,7 +72,6 @@ def train_sweaty(criterion, device, epochs, model, optimizer, trainloader, train
         epoch_loss /= len(trainset)
         epoch_time = time.time() - tic
         print("Epoch: {}, loss: {}, time: {:.5f} seconds".format(epoch + 1, epoch_loss, epoch_time))
-
 
 if __name__=='__main__':
     main()

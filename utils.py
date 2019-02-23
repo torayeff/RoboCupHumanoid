@@ -187,6 +187,28 @@ def detect_peaks(signal, threshold, dist=2):
     return peaks
 
 
+def detect_max_peak(signal, threshold, dist=2):
+    """Detects only one peak (the max) in 2D signal."""
+
+    signal = signal.copy()
+    peaks = []
+
+    max_ind = np.unravel_index(np.argmax(signal, axis=None), signal.shape)
+    max_val = signal[max_ind]
+
+    if max_val > threshold:
+        signal[max_ind] = 0
+        peaks.append(max_ind)
+
+        # mask pixels around peak
+        for i in range(int(max_ind[0] - dist), int(max_ind[0] + 1 + dist)):
+            for j in range(int(max_ind[1] - dist), int(max_ind[1] + 1 + dist)):
+                if (i > 0) and (i < signal.shape[0]) and (j > 0) and (j < signal.shape[1]):
+                    signal[i, j] = 0
+
+    return peaks
+
+
 def evaluate(bndboxes, detections, downsample, radius=5):
     """Calculates the number of true positives, false positives, true negatives and false negatives.
 
@@ -294,7 +316,9 @@ def evaluate_model(model, device, trainset, verbose=False, debug=False):
                 # output_signal = np.zeros(output_signal.shape)  # for debug
             else:
                 output_signal = np.array(model(image).squeeze().to(torch.device('cpu')))
-            detections = detect_peaks(output_signal, threshold_abs)
+
+
+            detections = detect_max_peak(output_signal, threshold_abs)
 
         tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
         tps += tp
@@ -433,6 +457,8 @@ class SoccerBallDataset(Dataset):
                 width: Width of the image.
                 bndboxes: Coordinates of bounding boxes around objects as a list of tuples.
         """
+        if DEBUG:
+            print(img_name, self.dset[img_name])
         width = self.dset[img_name][0][0]
         height = self.dset[img_name][0][1]
         bndboxes = []

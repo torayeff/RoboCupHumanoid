@@ -4,7 +4,6 @@ from SweatyNet1 import SweatyNet1
 import utils
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage.feature import peak
 import matplotlib.cm as cm
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -21,14 +20,14 @@ print(model)
 
 conv_gru = ConvGruCell(1, 1, device)
 
-trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=4)
+trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=4, delimiter=',')
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=2, shuffle=True, num_workers=2)
 
 idx = 51
 image = trainset[idx]['image']
 signal = np.array(trainset[idx]['signal'].squeeze())
 
-output = model(image.unsqueeze(0).float().to(device), None, None)
+output = model(image.unsqueeze(0).float().to(device))
 print(output.size())
 output = conv_gru(output)
 

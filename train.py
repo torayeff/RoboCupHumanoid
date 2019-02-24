@@ -24,7 +24,8 @@ def main():
 
     train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset)
 
-    utils.evaluate_model(model, device, trainset)
+    threshhold = utils.get_abs_threshold(trainset)
+    utils.evaluate_sweaty_model(model, device, trainset, threshhold)
 
 
 def init_training_configs(batch_size, model):

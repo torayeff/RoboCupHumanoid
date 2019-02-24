@@ -22,10 +22,13 @@ def main():
     print(device)
 
     print("Initializing conv-gru cell...")
-    model, convGruModel = init_sweaty_gru(device, opt.load)
+    sweaty, convGruModel = init_sweaty_gru(device, opt.load)
 
     criterion, trainloader, trainset = init_training_configs(batch_size)
-    train_sweatyGru(criterion, device, epochs, model, convGruModel, trainloader, trainset)
+    train_sweatyGru(criterion, device, epochs, sweaty, convGruModel, trainloader, trainset)
+
+    threshhold = utils.get_abs_threshold(trainset)
+    utils.evaluate_sweaty_gru_model(trainset, device, sweaty, convGruModel, threshhold)
 
 
 def init_training_configs(batch_size):
@@ -54,9 +57,7 @@ def init_sweaty_gru(device, load_path):
 
 
 def train_sweatyGru(criterion, device, epochs, sweaty, conv_gru, trainloader, trainset):
-
-
-    # freeze sweaty
+      # freeze sweaty
     for param in sweaty.parameters():
         param.requires_grad = False
 
@@ -93,7 +94,8 @@ def train_sweatyGru(criterion, device, epochs, sweaty, conv_gru, trainloader, tr
             epoch_loss += loss.item()
 
         if (epoch + 1) % 10 == 0:
-            torch.save(sweaty.state_dict(), "pretrained_models/joan/epoch_{}_sweatyGru.model".format(epoch + 1))
+            torch.save(sweaty.state_dict(), "pretrained_models/joan/epoch_{}_sweaty.model".format(epoch + 1))
+            torch.save(conv_gru.state_dict(), "pretrained_models/joan/epoch_{}_gru.model".format(epoch + 1))
 
         epoch_loss /= len(trainset)
         epoch_time = time.time() - tic

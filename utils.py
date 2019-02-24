@@ -354,7 +354,7 @@ def evaluate_sweaty_gru_model(sweaty, conv_gru, device, dataset, threshold_abs, 
     tns = 0
     fns = 0
 
-    sequence_input = torch.zeros((seq_len, 1, 120, 160))
+    sequence_input = torch.zeros((seq_len, 1, 120, 160), device=device)
 
     print(sequence_input.size())
 

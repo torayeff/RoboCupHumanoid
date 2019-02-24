@@ -356,8 +356,6 @@ def evaluate_sweaty_gru_model(sweaty, conv_gru, device, dataset, threshold_abs, 
 
     sequence_input = torch.zeros((seq_len, 1, 120, 160), device=device)
 
-    print(sequence_input.size())
-
     hidden_state = None
     detections = None
 

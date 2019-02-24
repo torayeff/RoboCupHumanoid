@@ -35,7 +35,7 @@ def init_training_configs(batch_size):
     criterion = nn.MSELoss()
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     trainset = utils.SoccerBallDataset("data/train_images/data.csv", "data/train_images", downsample=4)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=2)
     print("# examples: ", len(trainset))
     return criterion, trainloader, trainset
 

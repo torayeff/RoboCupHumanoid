@@ -435,7 +435,7 @@ class SoccerBallDataset(Dataset):
                 for y in range(ymin, ymax + 1):
                     for x in range(xmin, xmax + 1):
                         if (y >= 0) and (x >= 0) and (y < s_height) and (x < s_width):
-                            signal[0, y, x] += 1 * scipy.stats.multivariate_normal.pdf([y, x],
+                            signal[0, y, x] += 1000 * scipy.stats.multivariate_normal.pdf([y, x],
                                                                                    [c_y, c_x],
                                                                                    [self.sigma, self.sigma])
 

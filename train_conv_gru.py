@@ -1,4 +1,3 @@
-import argparse
 import torch
 import torch.nn as nn
 import utils as utils
@@ -12,7 +11,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--load', required=True, help='path to pretrained Sweaty model')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
-    parser.add_argument('--batch_size', type=int, default=16, help='batch size')
+    parser.add_argument('--batch_size', type=int, default=15, help='batch size')
 
     opt = parser.parse_args()
 
@@ -25,9 +24,18 @@ def main():
     print("Initializing conv-gru cell...")
     model, convGruModel = init_sweaty_gru(device, opt.load)
 
-    parameters = list(model.parameters()) + list(convGruModel.parameters())
-    optimizer = torch.optim.Adam(parameters)
-    h_t = None
+    criterion, trainloader, trainset = init_training_configs(batch_size)
+    train_sweatyGru(criterion, device, epochs, model, convGruModel, trainloader, trainset)
+
+
+def init_training_configs(batch_size):
+    criterion = nn.MSELoss()
+    # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    trainset = utils.SoccerBallDataset("data/train_images/data.csv", "data/train_images", downsample=4)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
+    print("# examples: ", len(trainset))
+    return criterion, trainloader, trainset
+
 
 def init_sweaty_gru(device, load_path):
     model = SweatyNet1()
@@ -45,11 +53,27 @@ def init_sweaty_gru(device, load_path):
     return model, convGruModel
 
 
-def train_sweatyGru(criterion, device, epochs, model, optimizer, trainloader, trainset):
+def train_sweatyGru(criterion, device, epochs, sweaty, conv_gru, trainloader, trainset):
+
+
+    # freeze sweaty
+    for param in sweaty.parameters():
+        param.requires_grad = False
+
+    optimizer = torch.optim.Adam(conv_gru.parameters())
+
     print("Starting training for {} epochs...".format(epochs))
     for epoch in range(epochs):
         epoch_loss = 0
         tic = time.time()
+
+        if epoch == 20:
+            # unfreeze Sweaty
+            for param in sweaty.parameters():
+                param.requires_grad = True
+
+            parameters = list(sweaty.parameters()) + list(conv_gru.parameters())
+            optimizer = torch.optim.Adam(parameters)
 
         for i, data in enumerate(trainloader):
             optimizer.zero_grad()
@@ -57,9 +81,11 @@ def train_sweatyGru(criterion, device, epochs, model, optimizer, trainloader, tr
             images = data['image'].float().to(device)
             signals = data['signal'].float().to(device)
 
-            outputs = model(images)
+            sweaty_features = sweaty(images)
 
-            loss = criterion(signals, outputs)
+            hidden_state = conv_gru(sweaty_features)
+
+            loss = criterion(signals, hidden_state)
 
             loss.backward()
             optimizer.step()
@@ -67,7 +93,7 @@ def train_sweatyGru(criterion, device, epochs, model, optimizer, trainloader, tr
             epoch_loss += loss.item()
 
         if (epoch + 1) % 10 == 0:
-            torch.save(model.state_dict(), "pretrained_models/joan/epoch_{}.model".format(epoch + 1))
+            torch.save(sweaty.state_dict(), "pretrained_models/joan/epoch_{}_sweatyGru.model".format(epoch + 1))
 
         epoch_loss /= len(trainset)
         epoch_time = time.time() - tic

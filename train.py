@@ -36,6 +36,7 @@ def init_training_configs(batch_size, model):
     print("# examples: ", len(trainset))
     return criterion, optimizer, trainloader, trainset
 
+
 # TODO: Share it
 def init_sweaty(device, load_path):
     model = SweatyNet1()

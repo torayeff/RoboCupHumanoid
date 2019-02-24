@@ -281,7 +281,7 @@ def evaluate(bndboxes, detections, downsample, radius=5):
     return tps, fps, tns, fns
 
 
-def evaluate_model(model, device, trainset, verbose=False, debug=False):
+def evaluate_model(model, device, dataset, threshold_abs, verbose=False, debug=False):
     """Evaluates given model.
 
     """
@@ -294,19 +294,16 @@ def evaluate_model(model, device, trainset, verbose=False, debug=False):
         model.to(device)
         model.eval()
 
-    print("Calculating threshold for training set...")
-    threshold_abs = get_abs_threshold(trainset, 0.7)
-
-    downsample = trainset[0]['image'].shape[1] / trainset[0]['signal'].shape[1]
+    downsample = dataset[0]['image'].shape[1] / dataset[0]['signal'].shape[1]
 
     tps = 0
     fps = 0
     tns = 0
     fns = 0
 
-    for i, data in enumerate(trainset):
+    for i, data in enumerate(dataset):
         if verbose:
-            print("Calculating metric for image: {}, [{}/{}]".format(data['img_name'], i, len(trainset)))
+            print("Calculating metric for image: {}, [{}/{}]".format(data['img_name'], i, len(dataset)))
 
         image = data['image'].unsqueeze(0).float().to(device)
         bndboxes = data['bndboxes']
@@ -316,7 +313,6 @@ def evaluate_model(model, device, trainset, verbose=False, debug=False):
                 # output_signal = np.zeros(output_signal.shape)  # for debug
             else:
                 output_signal = np.array(model(image).squeeze().to(torch.device('cpu')))
-
 
             detections = detect_max_peak(output_signal, threshold_abs)
 
@@ -439,7 +435,7 @@ class SoccerBallDataset(Dataset):
                 for y in range(ymin, ymax + 1):
                     for x in range(xmin, xmax + 1):
                         if (y >= 0) and (x >= 0) and (y < s_height) and (x < s_width):
-                            signal[0, y, x] += 1000 * scipy.stats.multivariate_normal.pdf([y, x],
+                            signal[0, y, x] += 1 * scipy.stats.multivariate_normal.pdf([y, x],
                                                                                    [c_y, c_x],
                                                                                    [self.sigma, self.sigma])
 

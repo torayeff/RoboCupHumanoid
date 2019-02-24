@@ -28,7 +28,7 @@ def main():
     train_sweatyGru(criterion, device, epochs, sweaty, convGruModel, trainloader, trainset)
 
     threshhold = utils.get_abs_threshold(trainset)
-    utils.evaluate_sweaty_gru_model(trainset, device, sweaty, convGruModel, threshhold)
+    utils.evaluate_sweaty_gru_model(sweaty, convGruModel, device, trainset, threshhold)
 
 
 def init_training_configs(batch_size):

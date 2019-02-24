@@ -23,7 +23,7 @@ downsample = opt.downsample
 batch_size = opt.batch_size
 testset = opt.testSet
 trainset = opt.trainSet
-pretrained_model = opt.load
+pretrained_model = opt.loadSweaty
 gru_cell = opt.loadGru
 
 
@@ -41,7 +41,7 @@ sweaty.eval()
 convGru.eval()
 
 threshold = utils.get_abs_threshold(trainset)
-metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True, debug=False)
+metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True)
 
 
 rc = metrics['tps']/(metrics['tps'] + metrics['fns'])

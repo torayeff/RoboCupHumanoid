@@ -379,6 +379,8 @@ class SoccerBallDataset(Dataset):
 
         self.filenames = list(self.dset.keys())
 
+        self.filenames.sort()
+
         self.teacher_signals = {}
 
         self.compute_teacher_signals()

@@ -32,7 +32,7 @@ def init_training_configs(batch_size, model):
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters())
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    trainset = utils.SoccerBallDataset("data/train_images/data.csv", "data/train_images", downsample=4)
+    trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=4)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
     print("# examples: ", len(trainset))
     return criterion, optimizer, trainloader, trainset
@@ -49,7 +49,8 @@ def init_sweaty(device, load_path):
     return model
 
 
-def train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset):
+def train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset, model_name="model"):
+    model.train()
     print("Starting training for {} epochs...".format(epochs))
     for epoch in range(epochs):
         epoch_loss = 0
@@ -71,12 +72,12 @@ def train_sweaty(criterion, device, epochs, model, optimizer, trainloader, train
             epoch_loss += loss.item()
 
         if (epoch + 1) % 10 == 0:
-            torch.save(model.state_dict(), "pretrained_models/joan/epoch_{}.model".format(epoch + 1))
+            torch.save(model.state_dict(), "pretrained_models/{}_epoch_{}.model".format(model_name, epoch + 1))
 
         epoch_loss /= len(trainset)
         epoch_time = time.time() - tic
         print("Epoch: {}, loss: {}, time: {:.5f} seconds".format(epoch + 1, epoch_loss, epoch_time))
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

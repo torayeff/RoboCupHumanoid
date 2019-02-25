@@ -281,18 +281,22 @@ def evaluate(bndboxes, detections, downsample, radius=5):
     return tps, fps, tns, fns
 
 
-def evaluate_sweaty_model(model, device, dataset, threshold_abs, verbose=False, debug=False):
+def evaluate_sweaty_model(model, device, dataset, threshold_abs, eval_mode=True, verbose=False, debug=False):
     """Evaluates given model.
 
     """
     tic = time()
     print("Evaluating model...")
     # In order to convert tensors to numpy, we need to have those in cpu instead of gpu
-
     # model is None when debug=True
     if model:
         model.to(device)
-        model.eval()
+        if eval_mode:
+            print("eval() mode is turned on")
+            model.eval()
+        else:
+            print("eval() mode is turned off, train() is turned on")
+            model.train()
 
     downsample = dataset[0]['image'].shape[1] / dataset[0]['signal'].shape[1]
 
@@ -301,13 +305,13 @@ def evaluate_sweaty_model(model, device, dataset, threshold_abs, verbose=False, 
     tns = 0
     fns = 0
 
-    for i, data in enumerate(dataset):
-        if verbose:
-            print("Calculating metric for image: {}, [{}/{}]".format(data['img_name'], i, len(dataset)))
+    with torch.no_grad():
+        for i, data in enumerate(dataset):
+            if verbose:
+                print("Calculating metric for image: {}, [{}/{}]".format(data['img_name'], i, len(dataset)))
 
-        image = data['image'].unsqueeze(0).float().to(device)
-        bndboxes = data['bndboxes']
-        with torch.no_grad():
+            image = data['image'].unsqueeze(0).float().to(device)
+            bndboxes = data['bndboxes']
             if debug:
                 output_signal = np.array(data['signal']).squeeze()  # for debug
                 # output_signal = np.zeros(output_signal.shape)  # for debug
@@ -316,11 +320,11 @@ def evaluate_sweaty_model(model, device, dataset, threshold_abs, verbose=False, 
 
             detections = detect_max_peak(output_signal, threshold_abs)
 
-        tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
-        tps += tp
-        fps += fp
-        tns += tn
-        fns += fn
+            tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
+            tps += tp
+            fps += fp
+            tns += tn
+            fns += fn
 
     metrics = {
         'tps': tps,

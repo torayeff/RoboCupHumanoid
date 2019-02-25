@@ -13,6 +13,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
     parser.add_argument('--batch_size', type=int, default=4, help='batch size')
     parser.add_argument('--alpha', type=int, default=1000, help='batch size')
+    parser.add_argument('--model_name', type=str, default="model", help='batch size')
     opt = parser.parse_args()
     epochs = opt.epochs
     batch_size = opt.batch_size
@@ -21,15 +22,15 @@ def main():
 
     model = init_sweaty(device, opt.load)
 
-    criterion, optimizer, trainloader, trainset = init_training_configs(batch_size, model)
+    criterion, optimizer, trainloader, trainset = init_training_configs(batch_size, model, opt.alpha)
 
-    train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset)
+    train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset, model_name=opt.model_name)
 
     threshhold = utils.get_abs_threshold(trainset)
     utils.evaluate_sweaty_model(model, device, trainset, threshhold)
 
 
-def init_training_configs(batch_size, model):
+def init_training_configs(batch_size, model, alpha):
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters())
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)

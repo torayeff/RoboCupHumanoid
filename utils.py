@@ -301,26 +301,27 @@ def evaluate_model(model, device, dataset, threshold_abs, verbose=False, debug=F
     tns = 0
     fns = 0
 
-    for i, data in enumerate(dataset):
-        if verbose:
-            print("Calculating metric for image: {}, [{}/{}]".format(data['img_name'], i, len(dataset)))
+    with torch.no_grad():
+        for i, data in enumerate(dataset):
+            if verbose:
+                print("Calculating metric for image: {}, [{}/{}]".format(data['img_name'], i, len(dataset)))
 
-        image = data['image'].unsqueeze(0).float().to(device)
-        bndboxes = data['bndboxes']
-        with torch.no_grad():
-            if debug:
-                output_signal = np.array(data['signal']).squeeze()  # for debug
-                # output_signal = np.zeros(output_signal.shape)  # for debug
-            else:
-                output_signal = np.array(model(image).squeeze().to(torch.device('cpu')))
+            image = data['image'].unsqueeze(0).float().to(device)
+            bndboxes = data['bndboxes']
+            with torch.no_grad():
+                if debug:
+                    output_signal = np.array(data['signal']).squeeze()  # for debug
+                    # output_signal = np.zeros(output_signal.shape)  # for debug
+                else:
+                    output_signal = np.array(model(image).squeeze().to(torch.device('cpu')))
 
-            detections = detect_max_peak(output_signal, threshold_abs)
+                detections = detect_max_peak(output_signal, threshold_abs)
 
-        tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
-        tps += tp
-        fps += fp
-        tns += tn
-        fns += fn
+            tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
+            tps += tp
+            fps += fp
+            tns += tn
+            fns += fn
 
     metrics = {
         'tps': tps,
@@ -435,7 +436,7 @@ class SoccerBallDataset(Dataset):
                 for y in range(ymin, ymax + 1):
                     for x in range(xmin, xmax + 1):
                         if (y >= 0) and (x >= 0) and (y < s_height) and (x < s_width):
-                            signal[0, y, x] += 1 * scipy.stats.multivariate_normal.pdf([y, x],
+                            signal[0, y, x] += 1000 * scipy.stats.multivariate_normal.pdf([y, x],
                                                                                    [c_y, c_x],
                                                                                    [self.sigma, self.sigma])
 

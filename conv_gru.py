@@ -32,6 +32,8 @@ class ConvGruCell(nn.Module):
 
         if h_t is None:
             h_t = torch.zeros(1, self.hidden_dim, input.size(2), input.size(3), device=self.device)
+        else:
+            h_t = h_t.unsqueeze(0)
 
         self.test_sizes(input, h_t)
 

@@ -1,12 +1,13 @@
 import torch
 import utils as utils
 from SweatyNet1 import SweatyNet1
+from conv_gru import ConvGruCell
 import argparse
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--load', required=True, help='path to pretrained Sweaty model')
-parser.add_argument('--convLstm', type=int, default=0, help='flag for conv-gru layer. By default it does not use it')
+parser.add_argument('--loadSweaty', required=True, help='path to pretrained Sweaty model')
+parser.add_argument('--loadGru', required=True, help='path to pretrained Gru cell')
 parser.add_argument('--testSet', required=True, help='dataroot of the test set')
 parser.add_argument('--trainSet', required=True, help='dataroot of the train set')
 parser.add_argument('--batch_size', type=int, default=4,  help='batch size')
@@ -22,19 +23,26 @@ downsample = opt.downsample
 batch_size = opt.batch_size
 testset = opt.testSet
 trainset = opt.trainSet
-pretrained_model = opt.load
+pretrained_model = opt.loadSweaty
+gru_cell = opt.loadGru
 
-model = SweatyNet1()
-model.load_state_dict(torch.load(pretrained_model))
-model.to(device)
 
+sweaty = SweatyNet1()
+sweaty.load_state_dict(torch.load(pretrained_model))
+sweaty.eval()
+
+convGru = ConvGruCell(1, 1, device=device)
+convGru.load_state_dict(torch.load(gru_cell))
 
 testset = utils.SoccerBallDataset(testset + "data.csv", testset, downsample=downsample)
 trainset = utils.SoccerBallDataset(trainset + "data.csv", trainset, downsample=downsample)
 
-model.eval()
+sweaty.eval()
+convGru.eval()
+
 threshold = utils.get_abs_threshold(trainset)
-metrics = utils.evaluate_sweaty_model(model, device, testset, verbose=True, debug=False)
+metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True)
+
 
 rc = metrics['tps']/(metrics['tps'] + metrics['fns'])
 fdr = metrics['fps']/(metrics['fps'] + metrics['tps'])

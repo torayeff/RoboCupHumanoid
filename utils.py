@@ -490,7 +490,7 @@ class SoccerBallDataset(Dataset):
 
         return sample
 
-    def add_teacher_signal(self, img_name, alpha=1000):
+    def add_teacher_signal(self, img_name, alpha):
         """Creates teacher signal for the image.
             Args:
                 img_name: name of the image.
@@ -559,6 +559,7 @@ class SoccerBallDataset(Dataset):
             Returns:
                 Dictionary with key = img_name, value = (teacher_signal, bndboxes)
         """
+        print("Teacher signals are multiplied by ", alpha)
         tic = time()
         print("Computing teacher signals...")
         if self.threads == 1:

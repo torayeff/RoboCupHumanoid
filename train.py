@@ -12,6 +12,7 @@ def main():
     parser.add_argument('--load', default='', help='path to pretrained Sweaty model')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
     parser.add_argument('--batch_size', type=int, default=4, help='batch size')
+    parser.add_argument('--alpha', type=int, default=1000, help='batch size')
     opt = parser.parse_args()
     epochs = opt.epochs
     batch_size = opt.batch_size
@@ -32,7 +33,7 @@ def init_training_configs(batch_size, model):
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters())
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=4)
+    trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=4, alpha=alpha)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
     print("# examples: ", len(trainset))
     return criterion, optimizer, trainloader, trainset

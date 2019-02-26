@@ -40,8 +40,8 @@ trainset = utils.SoccerBallDataset(trainset + "data.csv", trainset, downsample=d
 sweaty.eval()
 convGru.eval()
 
-threshold = utils.get_abs_threshold(trainset)
-metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True)
+threshold = utils.get_abs_threshold(trainset, 0.0005)
+metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True, seq_len=10)
 
 
 rc = metrics['tps']/(metrics['tps'] + metrics['fns'])

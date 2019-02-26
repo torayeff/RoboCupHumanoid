@@ -377,7 +377,7 @@ def evaluate_sweaty_gru_model(sweaty, conv_gru, device, dataset, threshold_abs, 
             sequence_input = add_sweaty_output_to_seq(sequence_input, sweaty_output, i, i < seq_len)
 
             if i >= seq_len - 1:
-                hidden_state = conv_gru(sequence_input, hidden_state)
+                hidden_state = conv_gru(sequence_input)
                 output_to_evaluate = np.array(hidden_state.squeeze().to(torch.device('cpu')))
                 detections = detect_max_peak(output_to_evaluate, threshold_abs)
 

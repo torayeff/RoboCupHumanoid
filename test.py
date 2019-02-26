@@ -34,7 +34,7 @@ trainset = utils.SoccerBallDataset(trainset + "data.csv", trainset, downsample=d
 
 model.eval()
 threshold = utils.get_abs_threshold(trainset)
-metrics = utils.evaluate_sweaty_model(model, device, testset, verbose=True, debug=False)
+metrics = utils.evaluate_sweaty_model(model, device, testset, threshold, verbose=True, debug=False)
 
 rc = metrics['tps']/(metrics['tps'] + metrics['fns'])
 fdr = metrics['fps']/(metrics['fps'] + metrics['tps'])

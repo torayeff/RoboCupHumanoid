@@ -15,14 +15,11 @@ def main():
     parser.add_argument('--alpha', type=int, default=1000, help='batch size')
     parser.add_argument('--model_name', type=str, default="model", help='model name')
 
-
-
     opt = parser.parse_args()
 
     epochs = opt.epochs
     batch_size = opt.batch_size
-    model_name = 'model' + str(opt.alpha)
-
+    model_name = opt.model_name + str(opt.alpha)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -106,6 +103,7 @@ def train_sweatyGru(criterion, device, epochs, sweaty, conv_gru, trainloader, tr
         epoch_loss /= len(trainset)
         epoch_time = time.time() - tic
         print("Epoch: {}, loss: {}, time: {:.5f} seconds".format(epoch + 1, epoch_loss, epoch_time))
+
 
 if __name__=='__main__':
     main()

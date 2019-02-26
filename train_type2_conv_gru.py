@@ -10,6 +10,7 @@ import argparse
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--load', required=True, help='path to pretrained Sweaty model')
+    parser.add_argument('--loadGru', type=str, default='', help='path to pretrained Gru cell')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
     parser.add_argument('--batch_size', type=int, default=15, help='batch size')
     parser.add_argument('--alpha', type=int, default=1000, help='batch size')
@@ -25,12 +26,12 @@ def main():
     print(device)
 
     print("Initializing conv-gru cell...")
-    sweaty, convGruModel = init_sweaty_gru(device, opt.load)
+    sweaty, convGruModel = init_sweaty_gru(device, opt.load, opt.loadGru)
 
     criterion, trainloader, trainset = init_training_configs(batch_size, opt.alpha)
     train_sweatyGru(criterion, device, epochs, sweaty, convGruModel, trainloader, trainset, model_name)
 
-    threshhold = utils.get_abs_threshold(trainset)
+    threshhold = utils.get_abs_threshold(trainset, 0.001)
     utils.evaluate_type2_sweaty_gru_model(sweaty, convGruModel, device, trainset, threshhold)
 
 
@@ -43,7 +44,7 @@ def init_training_configs(batch_size, alpha):
     return criterion, trainloader, trainset
 
 
-def init_sweaty_gru(device, load_path):
+def init_sweaty_gru(device, load_path, load_gru=''):
     model = SweatyNet1()
     model.to(device)
     print(model)
@@ -55,6 +56,10 @@ def init_sweaty_gru(device, load_path):
 
     convGruModel = ConvGruCellPreConv(89, 1, device=device)
     convGruModel.to(device)
+
+    if load_gru != '':
+        print('Loading gru, continuing training ...')
+        convGruModel.load_state_dict(torch.load(load_gru))
 
     return model, convGruModel
 

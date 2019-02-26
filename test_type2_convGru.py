@@ -12,9 +12,9 @@ parser.add_argument('--testSet', required=True, help='dataroot of the test set')
 parser.add_argument('--trainSet', required=True, help='dataroot of the train set')
 parser.add_argument('--batch_size', type=int, default=4,  help='batch size')
 parser.add_argument('--downsample', type=int, default=4,  help='downsample')
-parser.add_argument('--p', type=float, default=0.7, help='percentage of abs threshold')
+parser.add_argument('--p', type=float, default=0.001, help='percentage of abs threshold')
 parser.add_argument('--alpha', type=int, default=1000, help='multiplication factor for the teacher signals')
-parser.add_argument('--seq_len', type=int, default=10, help='length of the sequence')
+parser.add_argument('--seq_len', type=int, required=True, help='length of the sequence')
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

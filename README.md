@@ -19,5 +19,19 @@ We used <a href="https://pjreddie.com/darknet/yolo/">YOLO</a> for automatic ball
 
 <b>Note</b>: One image file may contain multiple objects of different types.
 
+
+## Running the tests
+
+
+- Train sweaty
+`python train.py --batch_size=16 --alpha=1000 --model_name=alpha1000 --epochs=50
+`
+- Test Sweaty
+`python test.py --load=pretrained_models/alpha1000_epoch_50.model --testSet=data/test/ --trainSet=data/train/`
+
+
+
+
+
 ## References
 [1] Fabian Schnekenburger, Manuel Scharffenberg, Michael Wulker, Ulrich Hochberg, Klaus Dorer [*Detection and Localization of Features on a Soccer Field with Feedforward Fully Convolutional Neural Networks (FCNN) for the Adult-Size Humanoid Robot Sweaty*](http://lofarolabs.com/events/robocup/ws17/papers/Humanoids_RoboCup_Workshop_2017_pape_4.pdf)

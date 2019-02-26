@@ -14,6 +14,8 @@ parser.add_argument('--batch_size', type=int, default=4,  help='batch size')
 parser.add_argument('--downsample', type=int, default=4,  help='downsample')
 parser.add_argument('--p', type=float, default=0.7, help='percentage of abs threshold')
 parser.add_argument('--alpha', type=int, default=1000, help='multiplication factor for the teacher signals')
+parser.add_argument('--seq_len', type=int, default=10, help='length of the sequence')
+
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(device)
@@ -41,8 +43,9 @@ trainset = utils.SoccerBallDataset(trainset + "data.csv", trainset, downsample=d
 sweaty.eval()
 convGru.eval()
 
-threshold = utils.get_abs_threshold(trainset, 0.3)
-metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True)
+
+threshold = utils.get_abs_threshold(trainset, opt.p)
+metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True, seq_len=opt.seq_len)
 
 
 rc = metrics['tps']/(metrics['tps'] + metrics['fns'])

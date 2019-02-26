@@ -377,7 +377,7 @@ def evaluate_sweaty_gru_model(sweaty, conv_gru, device, dataset, threshold_abs, 
             sequence_input = add_sweaty_output_to_seq(sequence_input, sweaty_output, i, i < seq_len)
 
             if i >= seq_len - 1:
-                hidden_state = conv_gru(sequence_input, hidden_state)
+                hidden_state = conv_gru(sequence_input)
                 output_to_evaluate = np.array(hidden_state.squeeze().to(torch.device('cpu')))
                 detections = detect_max_peak(output_to_evaluate, threshold_abs)
 
@@ -416,7 +416,7 @@ class SoccerBallDataset(Dataset):
     """Soccer Balls dataset."""
 
     def __init__(self, csv_file, root_dir, transform=None, sigma=4, downsample=4,
-                 delimiter=";", labels=['ball'], threads=1):
+                 delimiter=";", labels=['ball'], alpha=1000, threads=1):
         """
         Args:
             csv_file: Path to csv file.
@@ -425,11 +425,13 @@ class SoccerBallDataset(Dataset):
             sigma: Standard deviation for Gaussian.
             downsample: Downsampling ratio (input output ratio)
             delimiter: Delimeter of the csv file
+            alpha: Gaussian multiplicative
         """
         self.sigma = sigma
         self.downsample = downsample
         self.labels = labels
         self.threads = threads
+        self.alpha = alpha
         # dset = {img_name : [ [w,h,l1,xmin1,ymin1,xmax1,ymax1], [w,h,l2,xmin2,ymin2,xmax2,ymax2] ] , ...}
         self.dset = {}
         """
@@ -461,7 +463,7 @@ class SoccerBallDataset(Dataset):
 
         self.teacher_signals = {}
 
-        self.compute_teacher_signals()
+        self.compute_teacher_signals(alpha)
 
         self.root_dir = root_dir
         self.transform = transform
@@ -488,10 +490,11 @@ class SoccerBallDataset(Dataset):
 
         return sample
 
-    def add_teacher_signal(self, img_name):
+    def add_teacher_signal(self, img_name, alpha):
         """Creates teacher signal for the image.
             Args:
                 img_name: name of the image.
+                alpha: Gaussian multiplicative factor
             Returns:
                 2D feature map of image.
         """
@@ -515,7 +518,7 @@ class SoccerBallDataset(Dataset):
                 for y in range(ymin, ymax + 1):
                     for x in range(xmin, xmax + 1):
                         if (y >= 0) and (x >= 0) and (y < s_height) and (x < s_width):
-                            signal[0, y, x] += 1000 * scipy.stats.multivariate_normal.pdf([y, x],
+                            signal[0, y, x] += alpha * scipy.stats.multivariate_normal.pdf([y, x],
                                                                                    [c_y, c_x],
                                                                                    [self.sigma, self.sigma])
 
@@ -550,24 +553,21 @@ class SoccerBallDataset(Dataset):
 
         return int(width), int(height), bndboxes
 
-    def compute_teacher_signals(self):
+    def compute_teacher_signals(self, alpha):
         """ Precomputes all teacher signals for each image
 
             Returns:
                 Dictionary with key = img_name, value = (teacher_signal, bndboxes)
         """
+        print("Teacher signals are multiplied by ", alpha)
         tic = time()
         print("Computing teacher signals...")
         if self.threads == 1:
             for img_name in self.filenames:
-                self.add_teacher_signal(img_name)
+                self.add_teacher_signal(img_name, alpha=alpha)
         # TODO: Later if we have time. For now it is not working
         elif self.threads > 1:
             with Pool(self.threads) as pool:
                 pool.imap(self.add_teacher_signal, self.filenames)
 
         print("Elapsed: {:f} sec.".format(time() - tic))
-
-
-# create_csv_from_txt_files('data/imageset_432.txt', 'data/imageset_432/')
-# create_csv_folder('data/train_cnn/', 'data/lab1/', sep=';')

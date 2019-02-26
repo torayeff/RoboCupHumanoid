@@ -37,8 +37,8 @@ sweaty.eval()
 convGru = ConvGruCell(1, 1, device=device)
 convGru.load_state_dict(torch.load(gru_cell))
 
-testset = utils.SoccerBallDataset(testset + "data.csv", testset, downsample=downsample)
-trainset = utils.SoccerBallDataset(trainset + "data.csv", trainset, downsample=downsample)
+testset = utils.SoccerBallDataset(testset + "data.csv", testset, downsample=downsample, alpha= opt.alpha)
+trainset = utils.SoccerBallDataset(trainset + "data.csv", trainset, downsample=downsample, alpha= opt.alpha)
 
 sweaty.eval()
 convGru.eval()

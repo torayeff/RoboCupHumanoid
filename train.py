@@ -13,18 +13,21 @@ def main():
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
     parser.add_argument('--batch_size', type=int, default=4, help='batch size')
     parser.add_argument('--alpha', type=int, default=1000, help='batch size')
-    parser.add_argument('--model_name', type=str, default="model", help='batch size')
+    parser.add_argument('--model_name', type=str, default="sweaty", help='model name')
+
     opt = parser.parse_args()
     epochs = opt.epochs
     batch_size = opt.batch_size
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
 
+    model_name = 'model' + str(opt.alpha)
+
     model = init_sweaty(device, opt.load)
 
     criterion, optimizer, trainloader, trainset = init_training_configs(batch_size, model, opt.alpha)
 
-    train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset, model_name=opt.model_name)
+    train_sweaty(criterion, device, epochs, model, optimizer, trainloader, trainset, model_name=model_name)
 
     threshhold = utils.get_abs_threshold(trainset)
     utils.evaluate_sweaty_model(model, device, trainset, threshhold)

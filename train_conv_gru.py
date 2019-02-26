@@ -12,11 +12,17 @@ def main():
     parser.add_argument('--load', required=True, help='path to pretrained Sweaty model')
     parser.add_argument('--epochs', type=int, default=100, help='total number of epochs')
     parser.add_argument('--batch_size', type=int, default=15, help='batch size')
+    parser.add_argument('--alpha', type=int, default=1000, help='batch size')
+    parser.add_argument('--model_name', type=str, default="model", help='model name')
+
+
 
     opt = parser.parse_args()
 
     epochs = opt.epochs
     batch_size = opt.batch_size
+    model_name = 'model' + str(opt.alpha)
+
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
@@ -24,17 +30,17 @@ def main():
     print("Initializing conv-gru cell...")
     sweaty, convGruModel = init_sweaty_gru(device, opt.load)
 
-    criterion, trainloader, trainset = init_training_configs(batch_size)
-    train_sweatyGru(criterion, device, epochs, sweaty, convGruModel, trainloader, trainset)
+    criterion, trainloader, trainset = init_training_configs(batch_size, opt.alpha)
+    train_sweatyGru(criterion, device, epochs, sweaty, convGruModel, trainloader, trainset, model_name)
 
     threshhold = utils.get_abs_threshold(trainset)
     utils.evaluate_sweaty_gru_model(sweaty, convGruModel, device, trainset, threshhold)
 
 
-def init_training_configs(batch_size):
+def init_training_configs(batch_size, alpha):
     criterion = nn.MSELoss()
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    trainset = utils.SoccerBallDataset("data/train_images/data.csv", "data/train_images", downsample=4)
+    trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=4, alpha=alpha)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=False, num_workers=2)
     print("# examples: ", len(trainset))
     return criterion, trainloader, trainset
@@ -56,7 +62,7 @@ def init_sweaty_gru(device, load_path):
     return model, convGruModel
 
 
-def train_sweatyGru(criterion, device, epochs, sweaty, conv_gru, trainloader, trainset):
+def train_sweatyGru(criterion, device, epochs, sweaty, conv_gru, trainloader, trainset, model_name):
       # freeze sweaty
     for param in sweaty.parameters():
         param.requires_grad = False
@@ -94,8 +100,8 @@ def train_sweatyGru(criterion, device, epochs, sweaty, conv_gru, trainloader, tr
             epoch_loss += loss.item()
 
         if (epoch + 1) % 10 == 0:
-            torch.save(sweaty.state_dict(), "pretrained_models/joan/epoch_{}_sweaty.model".format(epoch + 1))
-            torch.save(conv_gru.state_dict(), "pretrained_models/joan/epoch_{}_gru.model".format(epoch + 1))
+            torch.save(sweaty.state_dict(), "pretrained_models/joan/{}_epoch_{}_sweaty.model".format(model_name, epoch + 1))
+            torch.save(conv_gru.state_dict(), "pretrained_models/joan/{}_epoch_{}_gru.model".format(model_name, epoch + 1))
 
         epoch_loss /= len(trainset)
         epoch_time = time.time() - tic

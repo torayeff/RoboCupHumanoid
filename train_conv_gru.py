@@ -27,14 +27,14 @@ def main():
     print("Initializing conv-gru cell...")
     sweaty, convGruModel = init_sweaty_gru(device, opt.load)
 
-    criterion, trainloader, trainset = init_training_configs(batch_size, opt.alpha)
+    criterion, trainloader, trainset = init_training_configs_for_conv_gru(batch_size, opt.alpha)
     train_sweatyGru(criterion, device, epochs, sweaty, convGruModel, trainloader, trainset, model_name)
 
     threshhold = utils.get_abs_threshold(trainset)
     utils.evaluate_sweaty_gru_model(sweaty, convGruModel, device, trainset, threshhold)
 
 
-def init_training_configs(batch_size, alpha):
+def init_training_configs_for_conv_gru(batch_size, alpha):
     criterion = nn.MSELoss()
     # exp_lr_scheduler = lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     trainset = utils.SoccerBallDataset("data/train/data.csv", "data/train", downsample=4, alpha=alpha)

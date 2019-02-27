@@ -5,6 +5,7 @@ from sweaty_net_2_outputs import SweatyNet1
 from conv_gru import ConvGruCellPreConv
 import time
 import argparse
+import training_utils as helpers
 
 
 def main():
@@ -16,6 +17,7 @@ def main():
     parser.add_argument('--alpha', type=int, default=1000, help='batch size')
     parser.add_argument('--model_name', type=str, default="model", help='model name')
 
+
     opt = parser.parse_args()
 
     epochs = opt.epochs
@@ -26,7 +28,8 @@ def main():
     print(device)
 
     print("Initializing conv-gru cell...")
-    sweaty, convGruModel = init_sweaty_gru(device, opt.load, opt.loadGru)
+
+    sweaty, convGruModel = helpers.init_type2_sweaty_gru(device, opt.load, opt.loadGru)
 
     criterion, trainloader, trainset = init_training_configs(batch_size, opt.alpha)
     train_sweatyGru(criterion, device, epochs, sweaty, convGruModel, trainloader, trainset, model_name)
@@ -47,7 +50,6 @@ def init_training_configs(batch_size, alpha):
 def init_sweaty_gru(device, load_path, load_gru=''):
     model = SweatyNet1()
     model.to(device)
-    print(model)
     if load_path != '':
         print("Loading Sweaty")
         model.load_state_dict(torch.load(load_path))

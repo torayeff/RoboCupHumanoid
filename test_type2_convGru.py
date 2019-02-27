@@ -1,7 +1,7 @@
 import torch
 import utils as utils
-from SweatyNet1 import SweatyNet1
-from conv_gru import ConvGruCell
+from sweaty_net_2_outputs import SweatyNet1
+from conv_gru import ConvGruCellPreConv
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -14,7 +14,7 @@ parser.add_argument('--batch_size', type=int, default=4,  help='batch size')
 parser.add_argument('--downsample', type=int, default=4,  help='downsample')
 parser.add_argument('--p', type=float, default=0.001, help='percentage of abs threshold')
 parser.add_argument('--alpha', type=int, default=1000, help='multiplication factor for the teacher signals')
-parser.add_argument('--seq_len', type=int, default=10, help='length of the sequence')
+parser.add_argument('--seq_len', type=int, required=True, help='length of the sequence')
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -34,7 +34,7 @@ sweaty = SweatyNet1()
 sweaty.load_state_dict(torch.load(pretrained_model))
 sweaty.eval()
 
-convGru = ConvGruCell(1, 1, device=device)
+convGru = ConvGruCellPreConv(89, 1, device=device)
 convGru.load_state_dict(torch.load(gru_cell))
 
 testset = utils.SoccerBallDataset(testset + "data.csv", testset, downsample=downsample, alpha= opt.alpha)
@@ -45,7 +45,7 @@ convGru.eval()
 
 
 threshold = utils.get_abs_threshold(trainset, opt.p)
-metrics = utils.evaluate_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True, seq_len=opt.seq_len)
+metrics = utils.evaluate_type2_sweaty_gru_model(sweaty, convGru, device, testset, threshold, verbose=True, seq_len=opt.seq_len)
 
 
 rc = metrics['tps']/(metrics['tps'] + metrics['fns'])

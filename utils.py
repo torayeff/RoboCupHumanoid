@@ -377,7 +377,68 @@ def evaluate_sweaty_gru_model(sweaty, conv_gru, device, dataset, threshold_abs, 
             sequence_input = add_sweaty_output_to_seq(sequence_input, sweaty_output, i, i < seq_len)
 
             if i >= seq_len - 1:
-                hidden_state = conv_gru(sequence_input, hidden_state)
+                hidden_state = conv_gru(sequence_input)
+                output_to_evaluate = np.array(hidden_state.squeeze().to(torch.device('cpu')))
+                detections = detect_max_peak(output_to_evaluate, threshold_abs)
+
+        if detections is not None:
+            tp, fp, tn, fn = evaluate(bndboxes, detections, downsample)
+            tps += tp
+            fps += fp
+            tns += tn
+            fns += fn
+
+    metrics = {
+        'tps': tps,
+        'fps': fps,
+        'tns': tns,
+        'fns': fns
+    }
+
+    print("Elapsed: {:f} sec.".format(time() - tic))
+    print("Results: ", metrics)
+    return metrics
+
+
+def evaluate_type2_sweaty_gru_model(sweaty, conv_gru, device, dataset, threshold_abs, verbose=False, seq_len=15):
+
+    tic = time()
+    print("Evaluating model...")
+
+    # model is None when debug=True
+    if sweaty and conv_gru:
+        sweaty.to(device)
+        sweaty.eval()
+
+        conv_gru.to(device)
+        conv_gru.eval()
+
+    downsample = dataset[0]['image'].shape[1] / dataset[0]['signal'].shape[1]
+
+    tps = 0
+    fps = 0
+    tns = 0
+    fns = 0
+
+    sequence_input = torch.zeros((seq_len, 89, 120, 160), device=device)
+
+    detections = None
+
+    for i, data in enumerate(dataset):
+
+        if verbose:
+            print("Calculating metric for image: {}, [{}/{}]".format(data['img_name'], i, len(dataset)))
+
+        image = data['image'].unsqueeze(0).float().to(device)
+        bndboxes = data['bndboxes']
+
+        with torch.no_grad():
+            sweaty_output, skip_outputs = sweaty(image)
+
+            sequence_input = add_sweaty_output_to_seq(sequence_input, torch.cat([sweaty_output, skip_outputs], 1), i, i < seq_len)
+
+            if i >= seq_len - 1:
+                hidden_state = conv_gru(sequence_input)
                 output_to_evaluate = np.array(hidden_state.squeeze().to(torch.device('cpu')))
                 detections = detect_max_peak(output_to_evaluate, threshold_abs)
 

@@ -632,3 +632,57 @@ class SoccerBallDataset(Dataset):
                 pool.imap(self.add_teacher_signal, self.filenames)
 
         print("Elapsed: {:f} sec.".format(time() - tic))
+
+
+class GrayDataset(Dataset):
+    """Gray dataset."""
+
+    def __init__(self, csv_file, root_dir, delimiter=";"):
+        """
+        Args:
+            csv_file: Path to csv file.
+            root_dir: Directory with all images.
+            delimiter: Delimeter of the csv file
+        """
+        self.dset = {}
+
+        with open(csv_file, "r") as f:
+            next(f)
+            for line in f:
+                data = line.strip().split(delimiter)
+                img_name = data[0]
+                self.dset[img_name] = data[1:]
+
+        self.filenames = list(self.dset.keys())
+        self.filenames.sort()
+        self.root_dir = root_dir
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, idx):
+        """Fetches image with corresponding teacher signal."""
+
+        # input X
+        img_name = self.filenames[idx]
+        image_path = os.path.join(self.root_dir, img_name)
+        image = io.imread(image_path).transpose(2, 0, 1)  # [channels, height, width]
+        image = image / 255.  # normalizing the image
+        image = torch.from_numpy(image)
+
+        # teacher Y
+        teacher_name = self.dset[img_name][0]
+        teacher_path = os.path.join(self.root_dir, teacher_name)
+        teacher = io.imread(teacher_path)[np.newaxis, ...]
+        teacher = teacher / 255.
+        teacher = torch.from_numpy(teacher)
+
+        bndboxes = []
+        if len(self.dset[img_name]) > 4:
+            bndboxes = self.dset[img_name][-4:]
+            bndboxes = [int(x) for x in bndboxes]
+
+        sample = {'image': image, 'teacher': teacher, 'img_name': img_name, 'bndboxes': bndboxes}
+
+        return sample
+
